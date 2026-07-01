@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_enabled="false">
+        <shape>
+            <solid android:color="@color/ventoid_disabled" />
+            <corners android:radius="16dp" />
+        </shape>
+    </item>
+    <item android:state_pressed="true">
+        <shape>
+            <solid android:color="#4EBF6D" />
+            <corners android:radius="16dp" />
+        </shape>
+    </item>
+    <item>
+        <shape>
+            <gradient
+                android:angle="0"
+                android:endColor="#60C97C"
+                android:startColor="@color/ventoid_primary" />
+            <corners android:radius="16dp" />
+        </shape>
+    </item>
+</selector>

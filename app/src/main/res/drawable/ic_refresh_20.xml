@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="20dp"
+    android:height="20dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="@color/ventoid_primary"
+        android:pathData="M17.7,6.3C16.2,4.9 14.2,4 12,4c-4,0 -7.4,3 -7.9,6.9h2.1C6.7,8.1 9.1,6 12,6c1.7,0 3.3,0.7 4.4,1.8L13,11h8V3l-3.3,3.3zM6.3,17.7C7.8,19.1 9.8,20 12,20c4,0 7.4,-3 7.9,-6.9h-2.1C17.3,15.9 14.9,18 12,18c-1.7,0 -3.3,-0.7 -4.4,-1.8L11,13H3v8l3.3,-3.3z" />
+</vector>
