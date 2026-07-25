@@ -39,6 +39,7 @@ jobs:
           cache: gradle
 
       - name: Fix gradlew and permissions
+        working-directory: .
         run: |
           sed -i 's/\r$//' gradlew
           chmod +x gradlew
