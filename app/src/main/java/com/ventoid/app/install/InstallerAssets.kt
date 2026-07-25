@@ -21,9 +21,9 @@ data class InstallerAssets(
 
     companion object {
         private val requiredDigests = mapOf(
-            "boot/boot.img" to "F97FC398940E9D2CC796C38AACA614E7DAE194E1AAEF378280DB7C1890E10DF9",
-            "boot/core.img" to "756864E4CD1DE559DC868F6C0037544CDC480E3FCC9CEA9A2B5A5AAAD07DBBAA",
-            "ventoy/ventoy.disk.img" to "9DBA923D53FC3EF658D0A0419DD6778198547D61341CCEA58EBE23027BD6F2E7",
+            "boot/boot.img" to "F37CBEA83596AEF9812F4D984D344B5103913505DFEE40DC0025742EA54A6113",
+            "boot/core.img" to "B6581090947E7CACBD3CEE23DFE2216AEE9AB368C6508C2C5F3490621E969B84",
+            "ventoy/ventoy.disk.img" to "871F313D60D865A8EE307BC97C961E6CB619143288B4FAF811EFE9844CA1A003",
         )
         // fallback.efi and MokManager.efi were removed from the Ventoy EFI disk image
         // starting in v1.1.13/v1.1.14. Only BOOTX64.EFI and grubx64_real.efi are shipped.
