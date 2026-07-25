@@ -39,7 +39,7 @@ jobs:
           cache: gradle
 
       - name: Fix gradlew and permissions
-        working-directory: .
+        working-directory: ./Ventoid
         run: |
           sed -i 's/\r$//' gradlew
           chmod +x gradlew
