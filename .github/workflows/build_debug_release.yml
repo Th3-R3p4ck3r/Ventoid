@@ -45,10 +45,12 @@ jobs:
           chmod +x gradlew
 
       - name: Build debug APK
+        working-directory: ./Ventoid
         run: ./gradlew assembleDebug --no-daemon
 
       - name: Rename debug APK
         id: rename
+        working-directory: ./Ventoid
         run: |
           TAG="${GITHUB_REF_NAME:-manual}"
           DEBUG_SRC=$(find app/build/outputs/apk/debug -name "*.apk" | head -1)
@@ -61,7 +63,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.rename.outputs.debug_apk }}
-          path: ${{ steps.rename.outputs.debug_apk }}
+          path: Ventoid/${{ steps.rename.outputs.debug_apk }}
 
   build-release:
     name: Build Release APK
@@ -86,11 +88,13 @@ jobs:
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > "$RUNNER_TEMP/release.jks"
 
       - name: Fix gradlew and permissions
+        working-directory: ./Ventoid
         run: |
           sed -i 's/\r$//' gradlew
           chmod +x gradlew
 
       - name: Build release APK (signed)
+        working-directory: ./Ventoid
         env:
           VENTOID_RELEASE_STORE_FILE: ${{ runner.temp }}/release.jks
           VENTOID_RELEASE_STORE_PASSWORD: ${{ secrets.KEYSTORE_STORE_PASSWORD }}
@@ -100,6 +104,7 @@ jobs:
 
       - name: Rename release APK
         id: rename
+        working-directory: ./Ventoid
         run: |
           TAG="${GITHUB_REF_NAME:-manual}"
           RELEASE_SRC=$(find app/build/outputs/apk/release -name "*.apk" | head -1)
@@ -112,7 +117,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.rename.outputs.release_apk }}
-          path: ${{ steps.rename.outputs.release_apk }}
+          path: Ventoid/${{ steps.rename.outputs.release_apk }}
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
@@ -123,5 +128,4 @@ jobs:
           draft: false
           prerelease: ${{ contains(steps.rename.outputs.tag, '-') }}
           generate_release_notes: true
-          files: |
-            ${{ steps.rename.outputs.release_apk }}
+          files: Ventoid/${{ steps.rename.outputs.release_apk }}
