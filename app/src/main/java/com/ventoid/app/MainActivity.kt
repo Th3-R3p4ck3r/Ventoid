@@ -1,31 +1,45 @@
 package com.ventoid.app
 
+import android.app.AlertDialog
+import android.app.Dialog
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.hardware.usb.UsbManager
+import android.net.Uri
 import android.os.Bundle
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.TextPaint
+import android.text.method.LinkMovementMethod
+import android.text.style.ClickableSpan
 import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Button
+import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import com.ventoid.app.formatter.FormatClusterSize
+import com.ventoid.app.formatter.FormatFileSystem
+import com.ventoid.app.formatter.FormatPartitionTable
+import com.ventoid.app.formatter.UsbFormatter
 import com.ventoid.app.install.InstallMessage
 import com.ventoid.app.install.InstallProgress
 import com.ventoid.app.install.InstallStage
 import com.ventoid.app.install.InstallerAssets
 import com.ventoid.app.install.PartitionScheme
 import com.ventoid.app.install.VentoyInstallCoordinator
-import com.ventoid.app.util.VentoidFileLogger
 import com.ventoid.app.usb.UsbDeviceItem
 import com.ventoid.app.usb.UsbMassStorageHelper
+import com.ventoid.app.util.VentoidFileLogger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -34,13 +48,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.IOException
-import android.app.Dialog
-import android.text.SpannableString
-import android.text.Spanned
-import android.text.style.ClickableSpan
-import android.text.method.LinkMovementMethod
-import android.text.TextPaint
-import android.net.Uri
 
 class MainActivity : AppCompatActivity() {
 
@@ -49,13 +56,17 @@ class MainActivity : AppCompatActivity() {
         private const val MAX_LOG_LINES = 120
     }
 
+    // Tabs
+    private lateinit var tabButtonVentoy: TextView
+    private lateinit var tabButtonFormat: TextView
+    private lateinit var containerVentoyTab: LinearLayout
+    private lateinit var containerFormatTab: LinearLayout
+
+    // Ventoy Tab Views
     private lateinit var spinnerUsb: Spinner
     private lateinit var spinnerPartitionScheme: Spinner
     private lateinit var buttonRefresh: Button
     private lateinit var buttonInstall: Button
-    private lateinit var textLog: TextView
-    private lateinit var scrollLog: androidx.core.widget.NestedScrollView
-    private lateinit var textLogPath: TextView
     private lateinit var textStageTitle: TextView
     private lateinit var textHeroStatus: TextView
     private lateinit var textDeviceSummary: TextView
@@ -66,10 +77,24 @@ class MainActivity : AppCompatActivity() {
     private lateinit var chipPart1: TextView
     private lateinit var chipVentoy: TextView
 
+    // Format Tab Views
+    private lateinit var textFormatDeviceStatus: TextView
+    private lateinit var spinnerFormatFileSystem: Spinner
+    private lateinit var spinnerFormatClusterSize: Spinner
+    private lateinit var spinnerFormatPartitionTable: Spinner
+    private lateinit var editFormatVolumeLabel: EditText
+    private lateinit var buttonFormatAction: Button
+
+    // Shared Log Views
+    private lateinit var textLog: TextView
+    private lateinit var scrollLog: androidx.core.widget.NestedScrollView
+    private lateinit var textLogPath: TextView
+
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var permissionReceiver: BroadcastReceiver? = null
     private var usbReceiver: BroadcastReceiver? = null
     private var installJob: Job? = null
+    private var formatJob: Job? = null
     private var deviceList: List<UsbDeviceItem> = emptyList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -77,13 +102,17 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         UsbMassStorageHelper.ensureLibusbRegistered()
 
+        // Bind Tabs
+        tabButtonVentoy = findViewById(R.id.tab_button_ventoy)
+        tabButtonFormat = findViewById(R.id.tab_button_format)
+        containerVentoyTab = findViewById(R.id.container_ventoy_tab)
+        containerFormatTab = findViewById(R.id.container_format_tab)
+
+        // Bind Ventoy Tab Views
         spinnerUsb = findViewById(R.id.spinner_usb)
         spinnerPartitionScheme = findViewById(R.id.spinner_partition_scheme)
         buttonRefresh = findViewById(R.id.button_refresh)
         buttonInstall = findViewById(R.id.button_install)
-        textLog = findViewById(R.id.text_log)
-        scrollLog = findViewById(R.id.scroll_log)
-        textLogPath = findViewById(R.id.text_log_path)
         textStageTitle = findViewById(R.id.text_stage_title)
         textHeroStatus = findViewById(R.id.text_hero_status)
         textDeviceSummary = findViewById(R.id.text_device_summary)
@@ -94,18 +123,36 @@ class MainActivity : AppCompatActivity() {
         chipPart1 = findViewById(R.id.chip_part1)
         chipVentoy = findViewById(R.id.chip_ventoy)
 
+        // Bind Format Tab Views
+        textFormatDeviceStatus = findViewById(R.id.text_format_device_status)
+        spinnerFormatFileSystem = findViewById(R.id.spinner_format_file_system)
+        spinnerFormatClusterSize = findViewById(R.id.spinner_format_cluster_size)
+        spinnerFormatPartitionTable = findViewById(R.id.spinner_format_partition_table)
+        editFormatVolumeLabel = findViewById(R.id.edit_format_volume_label)
+        buttonFormatAction = findViewById(R.id.button_format_action)
+
+        // Bind Shared Log Views
+        textLog = findViewById(R.id.text_log)
+        scrollLog = findViewById(R.id.scroll_log)
+        textLogPath = findViewById(R.id.text_log_path)
+
         textLogPath.text = getString(R.string.log_path, VentoidFileLogger.getLogPath(this))
         textLogPath.visibility = TextView.VISIBLE
+
+        setupTabNavigation()
         setupPartitionSchemeSpinner()
+        setupFormatSpinners()
         refreshSecureBootStatus()
         renderInstallStage(InstallStage.UNKNOWN, 0)
         registerUsbReceiver()
 
         buttonRefresh.setOnClickListener { refreshDeviceList() }
         buttonInstall.setOnClickListener { onInstallClicked() }
+        buttonFormatAction.setOnClickListener { onFormatClicked() }
         findViewById<TextView>(R.id.button_about).setOnClickListener {
             showAboutDialog()
         }
+
         spinnerUsb.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 updateSelectedDeviceSummary()
@@ -117,6 +164,29 @@ class MainActivity : AppCompatActivity() {
         }
 
         refreshDeviceList()
+    }
+
+    private fun setupTabNavigation() {
+        tabButtonVentoy.setOnClickListener { selectTab(isVentoy = true) }
+        tabButtonFormat.setOnClickListener { selectTab(isVentoy = false) }
+    }
+
+    private fun selectTab(isVentoy: Boolean) {
+        if (isVentoy) {
+            containerVentoyTab.visibility = View.VISIBLE
+            containerFormatTab.visibility = View.GONE
+            tabButtonVentoy.setBackgroundResource(R.drawable.tab_active)
+            tabButtonVentoy.setTextColor(ContextCompat.getColor(this, R.color.ventoid_primary_dark))
+            tabButtonFormat.setBackgroundResource(R.drawable.tab_inactive)
+            tabButtonFormat.setTextColor(ContextCompat.getColor(this, R.color.ventoid_text_secondary))
+        } else {
+            containerVentoyTab.visibility = View.GONE
+            containerFormatTab.visibility = View.VISIBLE
+            tabButtonFormat.setBackgroundResource(R.drawable.tab_active)
+            tabButtonFormat.setTextColor(ContextCompat.getColor(this, R.color.ventoid_primary_dark))
+            tabButtonVentoy.setBackgroundResource(R.drawable.tab_inactive)
+            tabButtonVentoy.setTextColor(ContextCompat.getColor(this, R.color.ventoid_text_secondary))
+        }
     }
 
     private fun setupPartitionSchemeSpinner() {
@@ -134,6 +204,24 @@ class MainActivity : AppCompatActivity() {
             override fun onNothingSelected(parent: AdapterView<*>?) = Unit
         }
         updatePartitionSchemeUi()
+    }
+
+    private fun setupFormatSpinners() {
+        spinnerFormatFileSystem.adapter = createSpinnerAdapter(
+            FormatFileSystem.values().map { it.displayName }
+        )
+        // Default to FAT32
+        spinnerFormatFileSystem.setSelection(1)
+
+        spinnerFormatClusterSize.adapter = createSpinnerAdapter(
+            FormatClusterSize.OPTIONS
+        )
+        spinnerFormatClusterSize.setSelection(0)
+
+        spinnerFormatPartitionTable.adapter = createSpinnerAdapter(
+            FormatPartitionTable.values().map { it.displayName }
+        )
+        spinnerFormatPartitionTable.setSelection(0)
     }
 
     private fun refreshSecureBootStatus() {
@@ -177,6 +265,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         installJob?.cancel()
+        formatJob?.cancel()
         unregisterPermissionReceiver()
         unregisterUsbReceiver()
         scope.cancel()
@@ -188,10 +277,13 @@ class MainActivity : AppCompatActivity() {
         val displayNames = deviceList.map { it.displayName }
         spinnerUsb.adapter = createSpinnerAdapter(displayNames)
         buttonInstall.isEnabled = deviceList.isNotEmpty()
+        buttonFormatAction.isEnabled = deviceList.isNotEmpty()
         updateSelectedDeviceSummary()
         if (deviceList.isEmpty()) {
             textStageTitle.text = getString(R.string.usb_device_none)
             textHeroStatus.text = getString(R.string.hero_status)
+            textFormatDeviceStatus.text = getString(R.string.no_device_connected)
+            textFormatDeviceStatus.setTextColor(ContextCompat.getColor(this, R.color.ventoid_text_primary))
         } else {
             if (installJob?.isActive != true) {
                 textStageTitle.text = getString(R.string.progress_idle)
@@ -206,11 +298,16 @@ class MainActivity : AppCompatActivity() {
         if (selected == null) {
             textDeviceSummary.text = getString(R.string.device_summary_empty)
             textDeviceSummary.setTextColor(ContextCompat.getColor(this, R.color.ventoid_text_secondary))
+            textFormatDeviceStatus.text = getString(R.string.no_device_connected)
+            textFormatDeviceStatus.setTextColor(ContextCompat.getColor(this, R.color.ventoid_text_primary))
             return
         }
 
         textDeviceSummary.text = getString(R.string.device_summary_selected, selected.displayName)
         textDeviceSummary.setTextColor(ContextCompat.getColor(this, R.color.ventoid_success))
+
+        textFormatDeviceStatus.text = selected.displayName
+        textFormatDeviceStatus.setTextColor(ContextCompat.getColor(this, R.color.ventoid_success))
     }
 
     private fun registerUsbReceiver() {
@@ -249,7 +346,41 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        requestUsbPermission(usbManager, item)
+        requestUsbPermission(usbManager, item) { startInstall(item) }
+    }
+
+    private fun onFormatClicked() {
+        val item = selectedUsbDevice() ?: return
+        val fsName = FormatFileSystem.values()[spinnerFormatFileSystem.selectedItemPosition].displayName
+        val ptName = FormatPartitionTable.values()[spinnerFormatPartitionTable.selectedItemPosition].displayName
+
+        val dialog = Dialog(this, R.style.Theme_Ventoid_Dialog)
+        dialog.setContentView(R.layout.dialog_confirm_format)
+        dialog.setCanceledOnTouchOutside(true)
+
+        val textTarget = dialog.findViewById<TextView>(R.id.text_confirm_target)
+        val textDetails = dialog.findViewById<TextView>(R.id.text_confirm_details)
+        val btnFormat = dialog.findViewById<TextView>(R.id.btn_confirm_format)
+        val btnCancel = dialog.findViewById<TextView>(R.id.btn_confirm_cancel)
+
+        textTarget.text = getString(R.string.device_summary_selected, item.displayName)
+        textDetails.text = getString(R.string.format_confirm_details_fmt, fsName, ptName)
+
+        btnFormat.setOnClickListener {
+            dialog.dismiss()
+            val usbManager = getSystemService(Context.USB_SERVICE) as UsbManager
+            if (usbManager.hasPermission(item.usbDevice)) {
+                startFormat(item)
+            } else {
+                requestUsbPermission(usbManager, item) { startFormat(item) }
+            }
+        }
+
+        btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialog.show()
     }
 
     private fun selectedUsbDevice(): UsbDeviceItem? {
@@ -261,7 +392,7 @@ class MainActivity : AppCompatActivity() {
         return deviceList[index]
     }
 
-    private fun requestUsbPermission(usbManager: UsbManager, item: UsbDeviceItem) {
+    private fun requestUsbPermission(usbManager: UsbManager, item: UsbDeviceItem, onGranted: () -> Unit) {
         unregisterPermissionReceiver()
 
         val receiver = object : BroadcastReceiver() {
@@ -273,7 +404,7 @@ class MainActivity : AppCompatActivity() {
                 unregisterPermissionReceiver()
 
                 if (usbManager.hasPermission(item.usbDevice)) {
-                    startInstall(item)
+                    onGranted()
                 } else {
                     log(getString(R.string.permission_denied))
                     toast(R.string.permission_denied)
@@ -307,6 +438,7 @@ class MainActivity : AppCompatActivity() {
         val partitionScheme = selectedPartitionScheme()
         installJob = scope.launch {
             buttonInstall.isEnabled = false
+            buttonFormatAction.isEnabled = false
             try {
                 safeLog(getString(R.string.partition_scheme_log, partitionScheme.toDisplayLabel()))
                 withContext(Dispatchers.IO) {
@@ -330,6 +462,57 @@ class MainActivity : AppCompatActivity() {
             } finally {
                 if (!isDestroyed) {
                     buttonInstall.isEnabled = deviceList.isNotEmpty()
+                    buttonFormatAction.isEnabled = deviceList.isNotEmpty()
+                }
+            }
+        }
+    }
+
+    private fun startFormat(item: UsbDeviceItem) {
+        formatJob?.cancel()
+        textLog.text = ""
+
+        val fs = FormatFileSystem.values()[spinnerFormatFileSystem.selectedItemPosition]
+        val pt = FormatPartitionTable.values()[spinnerFormatPartitionTable.selectedItemPosition]
+        val clusterSizeChoice = FormatClusterSize.OPTIONS[spinnerFormatClusterSize.selectedItemPosition]
+        val volumeLabel = editFormatVolumeLabel.text.toString()
+
+        formatJob = scope.launch {
+            buttonInstall.isEnabled = false
+            buttonFormatAction.isEnabled = false
+            try {
+                safeLog(getString(R.string.format_started, fs.displayName, pt.displayName))
+                withContext(Dispatchers.IO) {
+                    val session = UsbMassStorageHelper.openBlockDevice(applicationContext, item)
+                    try {
+                        UsbFormatter(session.blockDevice).format(
+                            fileSystem = fs,
+                            partitionTable = pt,
+                            clusterSizeChoice = clusterSizeChoice,
+                            volumeLabel = volumeLabel,
+                            onProgress = { msg -> safeLog(msg) }
+                        )
+                        session.syncBeforeClose()
+                    } finally {
+                        session.close()
+                    }
+                }
+                safeLog(getString(R.string.format_success))
+                safeToast(getString(R.string.format_success))
+            } catch (e: SecurityException) {
+                VentoidFileLogger.log(e)
+                safeLog(getString(R.string.permission_denied))
+                safeToast(getString(R.string.permission_denied))
+            } catch (e: IOException) {
+                VentoidFileLogger.log(e)
+                showError(getString(R.string.format_failed, e.message ?: e.javaClass.simpleName))
+            } catch (e: Exception) {
+                VentoidFileLogger.log(e)
+                showError(getString(R.string.unexpected_error_with_reason, e.message ?: e.javaClass.simpleName))
+            } finally {
+                if (!isDestroyed) {
+                    buttonInstall.isEnabled = deviceList.isNotEmpty()
+                    buttonFormatAction.isEnabled = deviceList.isNotEmpty()
                 }
             }
         }
@@ -542,11 +725,6 @@ class MainActivity : AppCompatActivity() {
             openUrl("https://github.com/Th3-R3p4ck3r/Ventoid")
         }
 
-        // val btnClose = dialog.findViewById<Button>(R.id.btn_close)
-        // btnClose.setOnClickListener {
-            // dialog.dismiss()
-        // }
-
         dialog.show()
     }
 
@@ -558,5 +736,4 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, "Unable to open link", Toast.LENGTH_SHORT).show()
         }
     }
-
 }

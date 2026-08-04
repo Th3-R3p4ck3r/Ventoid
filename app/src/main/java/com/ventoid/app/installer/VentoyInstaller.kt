@@ -104,9 +104,9 @@ class VentoyInstaller(
         }
         val mbr = ByteArray(512)
         bootCode.copyInto(mbr, 0, 0, VentoyConstants.MBR_BOOT_CODE_SIZE)
-        writeMbrPartitionEntry(mbr, 446, active = 0x80, type = VentoyConstants.MBR_PART1_TYPE_EXFAT_NTFS.toByte(),
+        writeMbrPartitionEntry(mbr, 446, active = 0x80, type = VentoyConstants.MBR_PART1_TYPE_EXFAT.toByte(),
             layout.part1StartSector, layout.part1SectorCount)
-        writeMbrPartitionEntry(mbr, 462, active = 0x00, type = VentoyConstants.MBR_PART2_TYPE_EFI.toByte(),
+        writeMbrPartitionEntry(mbr, 462, active = 0x00, type = VentoyConstants.MBR_PART2_TYPE_HIDDEN_FAT16.toByte(),
             layout.part2StartSector, layout.part2SectorCount)
         mbr[510] = VentoyConstants.MBR_SIGNATURE_55
         mbr[511] = VentoyConstants.MBR_SIGNATURE_AA
@@ -162,6 +162,7 @@ class VentoyInstaller(
             firstLba = layout.part2StartSector,
             lastLba = layout.part2EndSector,
             name = "VTOYEFI",
+            attributes = VentoyConstants.GPT_VTOYEFI_ATTRIBUTES,
         )
 
         val entriesCrc32 = crc32(entries)
@@ -206,13 +207,11 @@ class VentoyInstaller(
         }
         val start = startLba.toInt()
         val count = sectorCount.toInt()
-        var nHead = 255
+        // Standard LBA geometry used by all modern tools: 255 heads, 63 sectors/track.
+        // CHS values are largely ignored by modern OSes in favour of the LBA fields,
+        // but must be plausible to avoid confusing legacy tools.
+        val nHead = 255
         val nSector = 63
-        var nCyl = (512 * 1024) / nSector / nHead
-        while (nHead != 0 && (512L * 1024 / nSector / nHead) > 1024) {
-            nHead = (nHead * 2).coerceAtMost(255)
-        }
-        if (nHead == 0) nHead = 255
         val cyl = start / nSector / nHead
         val head = (start / nSector) % nHead
         val sec = (start % nSector) + 1
@@ -486,6 +485,7 @@ class VentoyInstaller(
         firstLba: Long,
         lastLba: Long,
         name: String,
+        attributes: Long = 0L,
     ) {
         val offset = entryIndex * 128
         val le = ByteBuffer.wrap(entries).order(ByteOrder.LITTLE_ENDIAN)
@@ -493,7 +493,7 @@ class VentoyInstaller(
         putGuidLe(le, offset + 16, uniqueGuid)
         le.putLong(offset + 32, firstLba)
         le.putLong(offset + 40, lastLba)
-        le.putLong(offset + 48, 0L)
+        le.putLong(offset + 48, attributes)
         val nameBytes = name.toByteArray(StandardCharsets.UTF_16LE)
         nameBytes.copyInto(entries, offset + 56, 0, minOf(nameBytes.size, 72))
     }
