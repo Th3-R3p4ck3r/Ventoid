@@ -11,205 +11,130 @@
         android:padding="20dp"
         android:orientation="vertical">
 
+        <!-- Top Segmented Tab Navigation Bar -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:padding="18dp"
-            android:background="@drawable/panel_hero"
-            android:gravity="center_vertical"
+            android:layout_height="46dp"
+            android:padding="3dp"
+            android:background="@drawable/panel_surface"
             android:orientation="horizontal">
 
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:gravity="center_horizontal"
-                android:orientation="vertical">
-
-                <ImageView
-                    android:layout_width="72dp"
-                    android:layout_height="72dp"
-                    android:contentDescription="@string/app_name"
-                    android:src="@drawable/ventoid_icon" />
-
-                <TextView
-                    android:id="@+id/button_about"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="28dp"
-                    android:paddingStart="12dp"
-                    android:paddingTop="6dp"
-                    android:paddingBottom="6dp"
-                    android:paddingEnd="12dp"
-                    android:background="@drawable/pill_status"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:text="@string/about_button"
-                    android:textColor="@color/ventoid_success"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
-
-            </LinearLayout>
-
-            <LinearLayout
+            <TextView
+                android:id="@+id/tab_button_ventoy"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:layout_marginStart="16dp"
-                android:orientation="vertical">
+                android:background="@drawable/tab_active"
+                android:gravity="center"
+                android:text="@string/tab_ventoy"
+                android:textColor="@color/ventoid_primary_dark"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:clickable="true"
+                android:focusable="true" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/hero_title"
-                    android:textColor="@color/ventoid_text_primary"
-                    android:textSize="24sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:text="@string/hero_subtitle"
-                    android:textColor="@color/ventoid_text_secondary"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:id="@+id/text_hero_status"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:paddingStart="12dp"
-                    android:paddingTop="6dp"
-                    android:paddingBottom="6dp"
-                    android:paddingEnd="12dp"
-                    android:background="@drawable/pill_status"
-                    android:text="@string/hero_status"
-                    android:textColor="@color/ventoid_success"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
-
-            </LinearLayout>
+            <TextView
+                android:id="@+id/tab_button_format"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginStart="4dp"
+                android:background="@drawable/tab_inactive"
+                android:gravity="center"
+                android:text="@string/tab_format"
+                android:textColor="@color/ventoid_text_secondary"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:clickable="true"
+                android:focusable="true" />
 
         </LinearLayout>
 
+        <!-- Container: Ventoy Installer Tab -->
         <LinearLayout
+            android:id="@+id/container_ventoy_tab"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:padding="18dp"
-            android:background="@drawable/panel_surface"
-            android:orientation="vertical">
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/select_usb"
-                android:textColor="@color/ventoid_text_primary"
-                android:textSize="18sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:text="@string/device_help"
-                android:textColor="@color/ventoid_text_secondary"
-                android:textSize="13sp" />
-
-            <Spinner
-                android:id="@+id/spinner_usb"
-                android:layout_width="match_parent"
-                android:layout_height="52dp"
-                android:layout_marginTop="14dp"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                android:background="@drawable/input_surface"
-                android:minHeight="52dp"
-                android:popupBackground="@drawable/panel_surface" />
-
-            <TextView
-                android:id="@+id/text_device_summary"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:text="@string/device_summary_empty"
-                android:textColor="@color/ventoid_text_secondary"
-                android:textSize="13sp" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="@string/partition_scheme_title"
-                android:textColor="@color/ventoid_text_primary"
-                android:textSize="15sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="@string/partition_scheme_help"
-                android:textColor="@color/ventoid_text_secondary"
-                android:textSize="13sp" />
-
-            <Spinner
-                android:id="@+id/spinner_partition_scheme"
-                android:layout_width="match_parent"
-                android:layout_height="52dp"
-                android:layout_marginTop="10dp"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                android:background="@drawable/input_surface"
-                android:minHeight="52dp"
-                android:popupBackground="@drawable/panel_surface" />
-
-            <TextView
-                android:id="@+id/text_secure_boot_status"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:text="@string/secure_boot_checking"
-                android:textColor="@color/ventoid_text_secondary"
-                android:textSize="13sp" />
+            android:orientation="vertical"
+            android:visibility="visible">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
-                android:padding="12dp"
-                android:background="@drawable/warning_panel"
+                android:padding="18dp"
+                android:background="@drawable/panel_hero"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:contentDescription="@string/overwrite_warning_title"
-                    android:src="@drawable/ic_warning_24" />
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:layout_width="72dp"
+                        android:layout_height="72dp"
+                        android:contentDescription="@string/app_name"
+                        android:src="@drawable/ventoid_icon" />
+
+                    <TextView
+                        android:id="@+id/button_about"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="28dp"
+                        android:paddingStart="12dp"
+                        android:paddingTop="6dp"
+                        android:paddingBottom="6dp"
+                        android:paddingEnd="12dp"
+                        android:background="@drawable/pill_status"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:text="@string/about_button"
+                        android:textColor="@color/ventoid_success"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
 
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:layout_marginStart="10dp"
+                    android:layout_marginStart="16dp"
                     android:orientation="vertical">
 
                     <TextView
-                        android:layout_width="match_parent"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/overwrite_warning_title"
-                        android:textColor="@color/ventoid_warning"
-                        android:textSize="13sp"
+                        android:text="@string/hero_title"
+                        android:textColor="@color/ventoid_text_primary"
+                        android:textSize="24sp"
                         android:textStyle="bold" />
 
                     <TextView
-                        android:layout_width="match_parent"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:text="@string/overwrite_warning_body"
+                        android:layout_marginTop="6dp"
+                        android:text="@string/hero_subtitle"
                         android:textColor="@color/ventoid_text_secondary"
-                        android:textSize="12sp" />
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/text_hero_status"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:paddingStart="12dp"
+                        android:paddingTop="6dp"
+                        android:paddingBottom="6dp"
+                        android:paddingEnd="12dp"
+                        android:background="@drawable/pill_status"
+                        android:text="@string/hero_status"
+                        android:textColor="@color/ventoid_success"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
 
                 </LinearLayout>
 
@@ -218,322 +143,286 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
-                android:orientation="horizontal">
+                android:layout_marginTop="16dp"
+                android:padding="18dp"
+                android:background="@drawable/panel_surface"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/select_usb"
+                    android:textColor="@color/ventoid_text_primary"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="@string/device_help"
+                    android:textColor="@color/ventoid_text_secondary"
+                    android:textSize="13sp" />
+
+                <Spinner
+                    android:id="@+id/spinner_usb"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:layout_marginTop="14dp"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:background="@drawable/input_surface"
+                    android:minHeight="52dp"
+                    android:popupBackground="@drawable/panel_surface" />
+
+                <TextView
+                    android:id="@+id/text_device_summary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="@string/device_summary_empty"
+                    android:textColor="@color/ventoid_text_secondary"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="@string/partition_scheme_title"
+                    android:textColor="@color/ventoid_text_primary"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="@string/partition_scheme_help"
+                    android:textColor="@color/ventoid_text_secondary"
+                    android:textSize="13sp" />
+
+                <Spinner
+                    android:id="@+id/spinner_partition_scheme"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:layout_marginTop="10dp"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:background="@drawable/input_surface"
+                    android:minHeight="52dp"
+                    android:popupBackground="@drawable/panel_surface" />
+
+                <TextView
+                    android:id="@+id/text_secure_boot_status"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="@string/secure_boot_checking"
+                    android:textColor="@color/ventoid_text_secondary"
+                    android:textSize="13sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:padding="12dp"
+                    android:background="@drawable/warning_panel"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:contentDescription="@string/overwrite_warning_title"
+                        android:src="@drawable/ic_warning_24" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="10dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/overwrite_warning_title"
+                            android:textColor="@color/ventoid_warning"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="@string/overwrite_warning_body"
+                            android:textColor="@color/ventoid_text_secondary"
+                            android:textSize="12sp" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/button_refresh"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/button_secondary"
+                        android:drawableStart="@drawable/ic_refresh_20"
+                        android:drawablePadding="8dp"
+                        android:gravity="center"
+                        android:text="@string/refresh"
+                        android:textAllCaps="false"
+                        android:textColor="@color/ventoid_text_primary" />
+
+                    <Button
+                        android:id="@+id/button_install"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="1"
+                        android:layout_marginStart="10dp"
+                        android:background="@drawable/button_primary"
+                        android:drawableStart="@drawable/ic_usb_20"
+                        android:drawablePadding="8dp"
+                        android:gravity="center"
+                        android:text="@string/install_ventoy"
+                        android:textAllCaps="false"
+                        android:textColor="@android:color/white" />
+
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/text_update_status"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="@string/update_status_hint"
+                    android:textColor="@color/ventoid_text_secondary"
+                    android:textSize="13sp" />
 
                 <Button
-                    android:id="@+id/button_refresh"
-                    android:layout_width="0dp"
+                    android:id="@+id/button_update"
+                    android:layout_width="match_parent"
                     android:layout_height="48dp"
-                    android:layout_weight="1"
+                    android:layout_marginTop="10dp"
                     android:background="@drawable/button_secondary"
                     android:drawableStart="@drawable/ic_refresh_20"
                     android:drawablePadding="8dp"
                     android:gravity="center"
-                    android:text="@string/refresh"
+                    android:text="@string/update_ventoy"
                     android:textAllCaps="false"
-                    android:textColor="@color/ventoid_text_primary" />
-
-                <Button
-                    android:id="@+id/button_install"
-                    android:layout_width="0dp"
-                    android:layout_height="48dp"
-                    android:layout_weight="1"
-                    android:layout_marginStart="10dp"
-                    android:background="@drawable/button_primary"
-                    android:drawableStart="@drawable/ic_usb_20"
-                    android:drawablePadding="8dp"
-                    android:gravity="center"
-                    android:text="@string/install_ventoy"
-                    android:textAllCaps="false"
-                    android:textColor="@android:color/white" />
+                    android:textColor="@color/ventoid_text_primary"
+                    android:enabled="false" />
 
             </LinearLayout>
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:padding="18dp"
-            android:background="@drawable/panel_surface"
-            android:orientation="vertical">
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/progress_title"
-                android:textColor="@color/ventoid_text_primary"
-                android:textSize="18sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/text_stage_title"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="@string/progress_idle"
-                android:textColor="@color/ventoid_text_secondary"
-                android:textSize="14sp" />
-
-            <ProgressBar
-                android:id="@+id/progress_install"
-                android:layout_width="match_parent"
-                android:layout_height="12dp"
-                android:layout_marginTop="14dp"
-                android:max="100"
-                android:progress="0"
-                android:progressDrawable="@drawable/progress_install"
-                style="?android:attr/progressBarStyleHorizontal" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
-                android:orientation="horizontal"
-                android:weightSum="4">
-
-                <TextView
-                    android:id="@+id/chip_mbr"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:paddingTop="8dp"
-                    android:paddingBottom="8dp"
-                    android:background="@drawable/chip_pending"
-                    android:gravity="center"
-                    android:text="@string/progress_mbr_short"
-                    android:textColor="@color/ventoid_text_primary"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/chip_core"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="8dp"
-                    android:paddingTop="8dp"
-                    android:paddingBottom="8dp"
-                    android:background="@drawable/chip_pending"
-                    android:gravity="center"
-                    android:text="@string/progress_core_short"
-                    android:textColor="@color/ventoid_text_primary"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/chip_part1"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="8dp"
-                    android:paddingTop="8dp"
-                    android:paddingBottom="8dp"
-                    android:background="@drawable/chip_pending"
-                    android:gravity="center"
-                    android:text="@string/progress_part1_short"
-                    android:textColor="@color/ventoid_text_primary"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/chip_ventoy"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="8dp"
-                    android:paddingTop="8dp"
-                    android:paddingBottom="8dp"
-                    android:background="@drawable/chip_pending"
-                    android:gravity="center"
-                    android:text="@string/progress_ventoy_short"
-                    android:textColor="@color/ventoid_text_primary"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
-
-            </LinearLayout>
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:padding="18dp"
-            android:background="@drawable/panel_surface"
-            android:orientation="vertical">
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/workflow_title"
-                android:textColor="@color/ventoid_text_primary"
-                android:textSize="18sp"
-                android:textStyle="bold" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:orientation="horizontal">
+                android:padding="18dp"
+                android:background="@drawable/panel_surface"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/progress_title"
+                    android:textColor="@color/ventoid_text_primary"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/text_stage_title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/progress_idle"
+                    android:textColor="@color/ventoid_text_secondary"
+                    android:textSize="14sp" />
+
+                <ProgressBar
+                    android:id="@+id/progress_install"
+                    android:layout_width="match_parent"
+                    android:layout_height="12dp"
+                    android:layout_marginTop="14dp"
+                    android:max="100"
+                    android:progress="0"
+                    android:progressDrawable="@drawable/progress_install"
+                    style="?android:attr/progressBarStyleHorizontal" />
 
                 <LinearLayout
-                    android:layout_width="40dp"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="center_horizontal"
-                    android:orientation="vertical">
+                    android:layout_marginTop="14dp"
+                    android:orientation="horizontal"
+                    android:weightSum="4">
 
                     <TextView
-                        android:layout_width="34dp"
-                        android:layout_height="34dp"
-                        android:background="@drawable/badge_active"
+                        android:id="@+id/chip_mbr"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:paddingTop="8dp"
+                        android:paddingBottom="8dp"
+                        android:background="@drawable/chip_pending"
                         android:gravity="center"
-                        android:text="@string/workflow_badge_1"
-                        android:textColor="@android:color/white"
-                        android:textStyle="bold" />
-
-                    <View
-                        android:layout_width="2dp"
-                        android:layout_height="72dp"
-                        android:background="@drawable/timeline_connector" />
-
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="12dp"
-                    android:padding="14dp"
-                    android:background="@drawable/workflow_card"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/workflow_step_title_1"
+                        android:text="@string/progress_mbr_short"
                         android:textColor="@color/ventoid_text_primary"
-                        android:textSize="15sp"
+                        android:textSize="12sp"
                         android:textStyle="bold" />
 
                     <TextView
-                        android:layout_width="match_parent"
+                        android:id="@+id/chip_core"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="@string/workflow_step_1"
-                        android:textColor="@color/ventoid_text_secondary"
-                        android:textSize="13sp" />
-
-                </LinearLayout>
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:orientation="horizontal">
-
-                <LinearLayout
-                    android:layout_width="40dp"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_horizontal"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="34dp"
-                        android:layout_height="34dp"
-                        android:background="@drawable/badge_pending"
+                        android:layout_weight="1"
+                        android:layout_marginStart="8dp"
+                        android:paddingTop="8dp"
+                        android:paddingBottom="8dp"
+                        android:background="@drawable/chip_pending"
                         android:gravity="center"
-                        android:text="@string/workflow_badge_2"
+                        android:text="@string/progress_core_short"
                         android:textColor="@color/ventoid_text_primary"
-                        android:textStyle="bold" />
-
-                    <View
-                        android:layout_width="2dp"
-                        android:layout_height="72dp"
-                        android:background="@drawable/timeline_connector" />
-
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="12dp"
-                    android:padding="14dp"
-                    android:background="@drawable/workflow_card"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/workflow_step_title_2"
-                        android:textColor="@color/ventoid_text_primary"
-                        android:textSize="15sp"
+                        android:textSize="12sp"
                         android:textStyle="bold" />
 
                     <TextView
-                        android:layout_width="match_parent"
+                        android:id="@+id/chip_part1"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="@string/workflow_step_2"
-                        android:textColor="@color/ventoid_text_secondary"
-                        android:textSize="13sp" />
-
-                </LinearLayout>
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:orientation="horizontal">
-
-                <LinearLayout
-                    android:layout_width="40dp"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_horizontal"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="34dp"
-                        android:layout_height="34dp"
-                        android:background="@drawable/badge_pending"
+                        android:layout_weight="1"
+                        android:layout_marginStart="8dp"
+                        android:paddingTop="8dp"
+                        android:paddingBottom="8dp"
+                        android:background="@drawable/chip_pending"
                         android:gravity="center"
-                        android:text="@string/workflow_badge_3"
+                        android:text="@string/progress_part1_short"
                         android:textColor="@color/ventoid_text_primary"
-                        android:textStyle="bold" />
-
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="12dp"
-                    android:padding="14dp"
-                    android:background="@drawable/workflow_card"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/workflow_step_title_3"
-                        android:textColor="@color/ventoid_text_primary"
-                        android:textSize="15sp"
+                        android:textSize="12sp"
                         android:textStyle="bold" />
 
                     <TextView
-                        android:layout_width="match_parent"
+                        android:id="@+id/chip_ventoy"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="@string/workflow_step_3"
-                        android:textColor="@color/ventoid_text_secondary"
-                        android:textSize="13sp" />
+                        android:layout_weight="1"
+                        android:layout_marginStart="8dp"
+                        android:paddingTop="8dp"
+                        android:paddingBottom="8dp"
+                        android:background="@drawable/chip_pending"
+                        android:gravity="center"
+                        android:text="@string/progress_ventoy_short"
+                        android:textColor="@color/ventoid_text_primary"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
 
                 </LinearLayout>
 
@@ -541,6 +430,178 @@
 
         </LinearLayout>
 
+        <!-- Container: Format USB Tab (Matching Provided Screenshots) -->
+        <LinearLayout
+            android:id="@+id/container_format_tab"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <!-- Card 1: Device Connection Status Header -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="20dp"
+                android:background="@drawable/panel_surface"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/text_format_device_status"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/no_device_connected"
+                    android:textColor="@color/ventoid_text_primary"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <ImageView
+                    android:id="@+id/image_format_usb_icon"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_marginStart="12dp"
+                    android:contentDescription="@string/select_usb"
+                    android:src="@drawable/ic_usb_drive" />
+
+            </LinearLayout>
+
+            <!-- Card 2: Format Controls Panel -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:padding="20dp"
+                android:background="@drawable/panel_surface"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="@string/format_title"
+                    android:textColor="@color/ventoid_text_primary"
+                    android:textSize="22sp"
+                    android:textStyle="bold" />
+
+                <!-- File System Option -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="28dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/label_file_system"
+                        android:textColor="@color/ventoid_text_primary"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <Spinner
+                        android:id="@+id/spinner_format_file_system"
+                        android:layout_width="160dp"
+                        android:layout_height="46dp"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp"
+                        android:background="@drawable/input_surface"
+                        android:popupBackground="@drawable/panel_surface" />
+
+                </LinearLayout>
+
+                <!-- Cluster Size Option -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/label_cluster_size"
+                        android:textColor="@color/ventoid_text_primary"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <Spinner
+                        android:id="@+id/spinner_format_cluster_size"
+                        android:layout_width="160dp"
+                        android:layout_height="46dp"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp"
+                        android:background="@drawable/input_surface"
+                        android:popupBackground="@drawable/panel_surface" />
+
+                </LinearLayout>
+
+                <!-- Partition Table Option -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/label_partition_table"
+                        android:textColor="@color/ventoid_text_primary"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <Spinner
+                        android:id="@+id/spinner_format_partition_table"
+                        android:layout_width="160dp"
+                        android:layout_height="46dp"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp"
+                        android:background="@drawable/input_surface"
+                        android:popupBackground="@drawable/panel_surface" />
+
+                </LinearLayout>
+
+                <!-- Volume Label Field -->
+                <EditText
+                    android:id="@+id/edit_format_volume_label"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="28dp"
+                    android:background="@drawable/input_surface"
+                    android:gravity="center"
+                    android:hint="@string/hint_volume_label"
+                    android:singleLine="true"
+                    android:textColor="@color/ventoid_text_primary"
+                    android:textColorHint="@color/ventoid_text_secondary"
+                    android:textSize="15sp" />
+
+                <!-- FORMAT Action Button -->
+                <Button
+                    android:id="@+id/button_format_action"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:layout_marginTop="32dp"
+                    android:background="@drawable/button_primary"
+                    android:text="@string/btn_format"
+                    android:textAllCaps="true"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Shared Log Section -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -570,7 +631,7 @@
             <androidx.core.widget.NestedScrollView
                 android:id="@+id/scroll_log"
                 android:layout_width="match_parent"
-                android:layout_height="240dp"
+                android:layout_height="200dp"
                 android:layout_marginTop="12dp"
                 android:background="@drawable/log_surface"
                 android:fillViewport="true">

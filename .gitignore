@@ -1,89 +1,39 @@
-# Ignore node_modules
-#node_modules/
+# ===== Gradle build output =====
+.gradle/
+build/
+app/build/
 
-# Ignore logs
+# ===== Local configuration (machine-specific, never commit) =====
+local.properties
+
+# ===== Kotlin / IntelliJ compiler session files =====
+.kotlin/
+.idea/
+*.iml
+
+# ===== Android build artifacts =====
+*.apk
+*.aab
+output-metadata.json
+captures/
+.externalNativeBuild/
+.cxx/
+*.hprof
+
+# ===== Logs & scratch files =====
 *.log
+build_apk*.txt
+*.tmp
 
-# Ignore environment variables
+# ===== OS / editor junk =====
+.DS_Store
+Thumbs.db
+*.jks
+*.keystore
+
+# ===== Google Services / secrets =====
+google-services.json
 .env
 
-# Ignore androidpe
+# ===== androidpe =====
 .androidpe
-
-# Ignore build output
-#dist/
-build/
-app/build
-
-# Ignore system files
-#.DS_Store
-#Thumbs.db
-
-# Gradle files
-.gradle/
-build/
-
-# Local configuration (SDK paths, etc.)
-local.properties
-
-# Log files
-*.log
-
-# Android Studio generated files
-captures/
-.externalNativeBuild/
-.cxx/
-*.aab
-*.apk
-output-metadata.json
-
-# IntelliJ/Android Studio project files
-*.iml
-.idea/
-misc.xml
-deploymentTargetDropDown.xml
-render.experimental.xml
-
-# Keystore files (security-sensitive)
-*.jks
-*.keystore
-
-# Google Services (Firebase, APIs)
-google-services.json
-
-# Profiling
-*.hprof
-# Gradle files
-.gradle/
-build/
-
-# Local configuration (SDK paths, etc.)
-local.properties
-
-# Log files
-*.log
-
-# Android Studio generated files
-captures/
-.externalNativeBuild/
-.cxx/
-*.aab
-*.apk
-output-metadata.json
-
-# IntelliJ/Android Studio project files
-*.iml
-.idea/
-misc.xml
-deploymentTargetDropDown.xml
-render.experimental.xml
-
-# Keystore files (security-sensitive)
-*.jks
-*.keystore
-
-# Google Services (Firebase, APIs)
-google-services.json
-
-# Profiling
-*.hprof

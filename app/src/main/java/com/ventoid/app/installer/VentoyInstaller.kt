@@ -37,6 +37,18 @@ class VentoyInstaller(
         }
     }
 
+    /**
+     * Result of [detectExistingInstall]. Describes an already-installed Ventoy disk
+     * so [update] can rewrite the boot files while preserving the data partition.
+     */
+    data class ExistingInstall(
+        val useGpt: Boolean,
+        val part1StartSector: Long,
+        val part2StartSector: Long,
+        val part2SectorCount: Long,
+        val part1IsExFat: Boolean,
+    )
+
     private data class DiskIdentity(
         val uuidBytes: ByteArray,
         val signatureBytes: ByteArray,
@@ -104,7 +116,7 @@ class VentoyInstaller(
         }
         val mbr = ByteArray(512)
         bootCode.copyInto(mbr, 0, 0, VentoyConstants.MBR_BOOT_CODE_SIZE)
-        writeMbrPartitionEntry(mbr, 446, active = 0x80, type = VentoyConstants.MBR_PART1_TYPE_EXFAT_NTFS.toByte(),
+        writeMbrPartitionEntry(mbr, 446, active = 0x80, type = VentoyConstants.MBR_PART1_TYPE_EXFAT.toByte(),
             layout.part1StartSector, layout.part1SectorCount)
         writeMbrPartitionEntry(mbr, 462, active = 0x00, type = VentoyConstants.MBR_PART2_TYPE_EFI.toByte(),
             layout.part2StartSector, layout.part2SectorCount)
@@ -162,6 +174,7 @@ class VentoyInstaller(
             firstLba = layout.part2StartSector,
             lastLba = layout.part2EndSector,
             name = "VTOYEFI",
+            attributes = VentoyConstants.GPT_VTOYEFI_ATTRIBUTES,
         )
 
         val entriesCrc32 = crc32(entries)
@@ -206,13 +219,11 @@ class VentoyInstaller(
         }
         val start = startLba.toInt()
         val count = sectorCount.toInt()
-        var nHead = 255
+        // Standard LBA geometry used by all modern tools: 255 heads, 63 sectors/track.
+        // CHS values are largely ignored by modern OSes in favour of the LBA fields,
+        // but must be plausible to avoid confusing legacy tools.
+        val nHead = 255
         val nSector = 63
-        var nCyl = (512 * 1024) / nSector / nHead
-        while (nHead != 0 && (512L * 1024 / nSector / nHead) > 1024) {
-            nHead = (nHead * 2).coerceAtMost(255)
-        }
-        if (nHead == 0) nHead = 255
         val cyl = start / nSector / nHead
         val head = (start / nSector) % nHead
         val sec = (start % nSector) + 1
@@ -236,6 +247,219 @@ class VentoyInstaller(
         mbr[offset + 13] = (count shr 8 and 0xFF).toByte()
         mbr[offset + 14] = (count shr 16 and 0xFF).toByte()
         mbr[offset + 15] = (count shr 24 and 0xFF).toByte()
+    }
+
+    /**
+     * Detect whether the device already carries a Ventoy install and, if so, return
+     * its layout. Used to offer "Update" without reformatting the data partition.
+     * Reads the current partition table from the device instead of recomputing it.
+     *
+     * @return the detected [ExistingInstall], or null when the disk is not a Ventoy disk.
+     */
+    @Throws(IOException::class)
+    fun detectExistingInstall(): ExistingInstall? {
+        val sector0 = readSector(0)
+        if (sector0.size < VentoyConstants.SECTOR_SIZE ||
+            sector0[510] != VentoyConstants.MBR_SIGNATURE_55 ||
+            sector0[511] != VentoyConstants.MBR_SIGNATURE_AA
+        ) {
+            VentoidFileLogger.log("detect: sector 0 is not a valid MBR (55 AA missing)")
+            return null
+        }
+
+        // GPT detection: protective MBR partition 1 has type 0xEE and sector 1 starts with "EFI PART".
+        val protectiveType = sector0[446 + 4].toInt() and 0xFF
+        if (protectiveType == VentoyConstants.GPT_PROTECTIVE_MBR_TYPE) {
+            val header = readSector(1)
+            val signature = "EFI PART".toByteArray(StandardCharsets.US_ASCII)
+            if (header.copyOfRange(0, signature.size).contentEquals(signature)) {
+                return detectExistingGpt(header)
+            }
+        }
+
+        // MBR detection: part1 type 0x07 (exFAT data), part2 type 0xEF (VTOYEFI).
+        val part1Type = sector0[446 + 4].toInt() and 0xFF
+        val part2Type = sector0[462 + 4].toInt() and 0xFF
+        if (part1Type != VentoyConstants.MBR_PART1_TYPE_EXFAT ||
+            part2Type != VentoyConstants.MBR_PART2_TYPE_EFI
+        ) {
+            VentoidFileLogger.log(
+                "detect: MBR partition types mismatch (part1=$part1Type part2=$part2Type)"
+            )
+            return null
+        }
+        val part1Start = readLeInt(sector0, 446 + 8).toLong()
+        val part2Start = readLeInt(sector0, 462 + 8).toLong()
+        val part2Count = readLeInt(sector0, 462 + 12).toLong()
+        if (part1Start <= 0 || part2Start <= 0 || part2Count <= 0) {
+            VentoidFileLogger.log("detect: MBR partition offsets invalid")
+            return null
+        }
+        return ExistingInstall(
+            useGpt = false,
+            part1StartSector = part1Start,
+            part2StartSector = part2Start,
+            part2SectorCount = part2Count,
+            part1IsExFat = isExFat(part1Start),
+        )
+    }
+
+    @Throws(IOException::class)
+    private fun detectExistingGpt(primaryHeader: ByteArray): ExistingInstall? {
+        val le = ByteBuffer.wrap(primaryHeader).order(ByteOrder.LITTLE_ENDIAN)
+        val entryLba = le.getLong(72)
+        val entryCount = le.getInt(80)
+        val entrySize = le.getInt(84)
+        if (entryCount < 2 || entrySize < 128) {
+            VentoidFileLogger.log("detect: GPT entry table too small (count=$entryCount size=$entrySize)")
+            return null
+        }
+        val entries = ByteBuffer.allocate(entryCount * entrySize)
+        val buf = ByteBuffer.allocate((entryCount * entrySize).coerceAtMost(8192)).order(ByteOrder.LITTLE_ENDIAN)
+        var offset = entryLba
+        var remaining = entryCount * entrySize
+        while (remaining > 0 && offset < totalBlocks) {
+            buf.clear()
+            blockDevice.read(offset, buf)
+            buf.flip()
+            val arr = ByteArray(buf.remaining())
+            buf.get(arr)
+            entries.put(arr)
+            offset += arr.size / blockSize
+            remaining -= arr.size
+        }
+        entries.flip()
+        val efsType = UUID.fromString("C12A7328-F81F-11D2-BA4B-00A0C93EC93B")
+        val basicDataType = UUID.fromString("EBD0A0A2-B9E5-4433-87C0-68B6B72699C7")
+        var part1Start = -1L
+        var part2Start = -1L
+        var part2Count = -1L
+        for (index in 0 until entryCount) {
+            val base = index * entrySize
+            val typeUuid = readGuidLe(entries, base)
+            val firstLba = entries.getLong(base + 32)
+            val lastLba = entries.getLong(base + 40)
+            when (typeUuid) {
+                efsType -> {
+                    part2Start = firstLba
+                    part2Count = lastLba - firstLba + 1
+                }
+                basicDataType -> part1Start = firstLba
+            }
+        }
+        if (part1Start <= 0 || part2Start <= 0 || part2Count <= 0) {
+            VentoidFileLogger.log("detect: GPT partitions not found (part1=$part1Start part2=$part2Start)")
+            return null
+        }
+        return ExistingInstall(
+            useGpt = true,
+            part1StartSector = part1Start,
+            part2StartSector = part2Start,
+            part2SectorCount = part2Count,
+            part1IsExFat = isExFat(part1Start),
+        )
+    }
+
+    @Throws(IOException::class)
+    private fun isExFat(partitionStartSector: Long): Boolean {
+        val sector = readSector(partitionStartSector)
+        if (sector.size < 512) return false
+        val sig = "EXFAT   ".toByteArray(StandardCharsets.US_ASCII)
+        return sector.copyOfRange(3, 11).contentEquals(sig)
+    }
+
+    /**
+     * Update an existing Ventoy install without touching the data partition.
+     * Rewrites the MBR boot code, core.img, and the VTOYEFI (part2) image.
+     * [existing] must come from [detectExistingInstall].
+     */
+    @Throws(IOException::class)
+    fun update(
+        existing: ExistingInstall,
+        bootImg: ByteArray,
+        coreImg: ByteArray,
+        ventoyDiskImg: ByteArray,
+        progress: ((step: String, current: Long, total: Long) -> Unit)? = null,
+    ) {
+        val tag = "Ventoid"
+        VentoidFileLogger.log(
+            "update: scheme=${if (existing.useGpt) "GPT" else "MBR"} " +
+                "part1Start=${existing.part1StartSector} part2Start=${existing.part2StartSector} " +
+                "part2Count=${existing.part2SectorCount}"
+        )
+        try { Log.d(tag, "update: detected existing layout") } catch (_: Exception) { }
+
+        val bootCode = bootImg.copyOf(VentoyConstants.MBR_BOOT_CODE_SIZE)
+
+        // Patch only the boot code in the existing sector 0, preserving partition entries.
+        val sector0 = readSector(0)
+        bootCode.copyInto(sector0, 0)
+        writeSectors(0, sector0)
+        val readBack = readSector(0)
+        if (readBack[510] != VentoyConstants.MBR_SIGNATURE_55 ||
+            readBack[511] != VentoyConstants.MBR_SIGNATURE_AA
+        ) {
+            VentoidFileLogger.log("update: MBR verification FAILED")
+            throw IOException("Update failed: MBR write did not persist. Check USB connection.")
+        }
+        progress?.invoke("mbr", 1, 1)
+
+        val coreSectors = if (existing.useGpt) {
+            VentoyConstants.CORE_IMG_SECTORS_GPT
+        } else {
+            VentoyConstants.CORE_IMG_SECTORS_MBR
+        }
+        val coreOffset = if (existing.useGpt) {
+            VentoyConstants.CORE_IMG_OFFSET_SECTOR_GPT
+        } else {
+            VentoyConstants.CORE_IMG_OFFSET_SECTOR_MBR
+        }
+        val coreBytes = coreSectors * VentoyConstants.SECTOR_SIZE
+        require(coreImg.size >= coreBytes) {
+            "core.img must be at least $coreBytes bytes (${coreSectors} sectors)"
+        }
+        writeSectors(coreOffset, coreImg, 0, coreBytes)
+        progress?.invoke("core", coreSectors.toLong(), coreSectors.toLong())
+
+        require(ventoyDiskImg.size >= VentoyConstants.VENTOY_EFI_PART_SIZE_BYTES) {
+            "ventoy.disk.img must be at least ${VentoyConstants.VENTOY_EFI_PART_SIZE_BYTES} bytes"
+        }
+        val ventoySourceSectors = ventoyDiskImg.size / VentoyConstants.SECTOR_SIZE
+        val ventoyTotalSectors = existing.part2SectorCount.coerceAtMost(ventoySourceSectors.toLong())
+        val ventoyChunkSectors = 256L
+        var ventoyWritten = 0L
+        while (ventoyWritten < ventoyTotalSectors) {
+            val chunk = minOf(ventoyChunkSectors, ventoyTotalSectors - ventoyWritten).toInt()
+            val chunkBytes = chunk * VentoyConstants.SECTOR_SIZE
+            writeSectors(
+                existing.part2StartSector + ventoyWritten,
+                ventoyDiskImg,
+                (ventoyWritten * VentoyConstants.SECTOR_SIZE).toInt(),
+                chunkBytes
+            )
+            ventoyWritten += chunk
+            progress?.invoke("ventoy", ventoyWritten, ventoyTotalSectors)
+        }
+        VentoidFileLogger.log("update: done (data partition untouched)")
+        try { Log.d(tag, "update: done") } catch (_: Exception) { }
+    }
+
+    private fun readLeInt(bytes: ByteArray, offset: Int): Int {
+        return (bytes[offset].toInt() and 0xFF) or
+            ((bytes[offset + 1].toInt() and 0xFF) shl 8) or
+            ((bytes[offset + 2].toInt() and 0xFF) shl 16) or
+            ((bytes[offset + 3].toInt() and 0xFF) shl 24)
+    }
+
+    private fun readGuidLe(buffer: ByteBuffer, offset: Int): UUID {
+        val most = ((buffer.getInt(offset).toLong() and 0xFFFFFFFFL) shl 32) or
+            ((buffer.getShort(offset + 4).toLong() and 0xFFFFL) shl 16) or
+            (buffer.getShort(offset + 6).toLong() and 0xFFFFL)
+        var least = 0L
+        for (index in 0 until 8) {
+            least = (least shl 8) or (buffer.get(offset + 8 + index).toLong() and 0xFFL)
+        }
+        return UUID(most, least)
     }
 
     /**
@@ -486,6 +710,7 @@ class VentoyInstaller(
         firstLba: Long,
         lastLba: Long,
         name: String,
+        attributes: Long = 0L,
     ) {
         val offset = entryIndex * 128
         val le = ByteBuffer.wrap(entries).order(ByteOrder.LITTLE_ENDIAN)
@@ -493,7 +718,7 @@ class VentoyInstaller(
         putGuidLe(le, offset + 16, uniqueGuid)
         le.putLong(offset + 32, firstLba)
         le.putLong(offset + 40, lastLba)
-        le.putLong(offset + 48, 0L)
+        le.putLong(offset + 48, attributes)
         val nameBytes = name.toByteArray(StandardCharsets.UTF_16LE)
         nameBytes.copyInto(entries, offset + 56, 0, minOf(nameBytes.size, 72))
     }

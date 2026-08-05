@@ -22,7 +22,7 @@ android {
         minSdk = 21
         targetSdk = 35
         versionCode = 1
-        versionName = "0.1.16"
+        versionName = "0.1.17"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     signingConfigs {
@@ -45,6 +45,8 @@ android {
             isMinifyEnabled = false
             if (signingConfigs.findByName("release") != null) {
                 signingConfig = signingConfigs.getByName("release")
+            } else {
+                signingConfig = signingConfigs.getByName("debug")
             }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

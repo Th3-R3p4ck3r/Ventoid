@@ -55,6 +55,21 @@
     <string name="unexpected_error_with_reason">Unexpected error: %1$s</string>
     <string name="write_protect_tip">Ventoid does not enable write protection. If the drive shows as read-only on a PC, check the hardware lock switch first, then clear the readonly flag with diskpart, or test with another USB port or device.</string>
     <string name="partition_scheme_log">Using %1$s partition scheme.</string>
+    <!-- Update Existing Ventoy Strings -->
+    <string name="update_ventoy">Update Ventoy</string>
+    <string name="update_status_hint">Select a Ventoy USB drive to enable update. Update rewrites the boot files and VTOYEFI partition while keeping your ISOs and files untouched.</string>
+    <string name="update_status_detected">Ventoy installation detected. Update will preserve the data partition (your ISO files).</string>
+    <string name="update_status_not_ventoy">No Ventoy installation detected on this drive. Use Install first.</string>
+    <string name="update_status_checking">Checking for an existing Ventoy installation...</string>
+    <string name="update_started">Starting Ventoy update...</string>
+    <string name="update_detected_log">Existing Ventoy installation detected. Preserving data partition.</string>
+    <string name="update_success">Ventoy updated successfully. Your ISO files were kept.</string>
+    <string name="update_confirm_title">Update Ventoy?</string>
+    <string name="update_confirm_body">Your files and ISOs on the data partition will be kept. Only the Ventoy boot files and VTOYEFI partition will be rewritten.</string>
+    <string name="update_confirm_warning">YOUR DATA AND ISO FILES WILL BE KEPT. ONLY THE VENTOY BOOT FILES ARE REWRITTEN.</string>
+    <string name="update_confirm_btn">Update Now</string>
+    <string name="update_failed_with_reason">Update failed: %1$s</string>
+    <string name="update_no_ventoy">This drive does not appear to have Ventoy installed. Install Ventoy first, then use Update to upgrade without losing data.</string>
     <string name="secure_boot_checking">Checking bundled Secure Boot support...</string>
     <string name="secure_boot_verified">Bundled Secure Boot chain verified: %1$s</string>
     <string name="secure_boot_missing">Bundled EFI image is missing Secure Boot markers: %1$s</string>
@@ -67,4 +82,24 @@
     <string name="about_dev_link_keyword">Th3-R3p4ck3r</string>
     <string name="about_github_label">Check for updates:</string>
     <string name="about_github_btn">https://github.com/Th3-R3p4ck3r/Ventoid</string>
+
+    <!-- Format USB Tab Strings -->
+    <string name="tab_ventoy">Ventoy</string>
+    <string name="tab_format">Format USB</string>
+    <string name="format_title">Format</string>
+    <string name="label_file_system">File System:</string>
+    <string name="label_cluster_size">Cluster Size:</string>
+    <string name="label_partition_table">Partition Table:</string>
+    <string name="hint_volume_label">Volume Label</string>
+    <string name="btn_format">FORMAT</string>
+    <string name="no_device_connected">No Device Connected.</string>
+    <string name="format_confirm_title">Format USB Drive?</string>
+    <string name="format_confirm_body">Are you sure you want to format %1$s?\n\nFile System: %2$s\nPartition Table: %3$s\n\nALL DATA ON THE DEVICE WILL BE PERMANENTLY ERASED.</string>
+    <string name="format_confirm_details_fmt">File System: %1$s\nPartition Table: %2$s</string>
+    <string name="format_confirm_btn">Format Now</string>
+    <string name="cancel">Cancel</string>
+    <string name="format_started">Starting USB format (%1$s, %2$s)...</string>
+    <string name="format_success">USB drive formatted successfully!</string>
+    <string name="format_failed">Format failed: %1$s</string>
 </resources>
+
