@@ -21,8 +21,8 @@ android {
         applicationId = "com.ventoid.app"
         minSdk = 21
         targetSdk = 35
-        versionCode = 2
-        versionName = "0.1.17"
+        versionCode = 1172
+        versionName = "0.1.17.2"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     signingConfigs {
