@@ -12,7 +12,7 @@ object VentoyConstants {
 
     const val MBR_PART1_TYPE_EXFAT: Int = 0x07
     const val MBR_PART2_TYPE_EFI: Int = 0xEF
-    const val MBR_PART2_TYPE_HIDDEN_FAT16: Int = 0x1C        // Hidden FAT16 partition type (prevents Windows drive letter assignment in MBR)
+    //const val MBR_PART2_TYPE_HIDDEN_FAT16: Int = 0x1C        // Hidden FAT16 partition type (prevents Windows drive letter assignment in MBR)
     const val GPT_PROTECTIVE_MBR_TYPE: Int = 0xEE
 
     /** GPT Partition Attributes for VTOYEFI: Bit 63 (No Drive Letter), Bit 62 (Hidden), Bit 0 (System Partition) */
