@@ -258,8 +258,8 @@ object ExFatFormatter {
     fun buildAllocationBitmap(sectorsPerCluster: Int, volumeLayout: VolumeLayout): ByteArray {
         val clusterBytes = sectorsPerCluster * SECTOR_SIZE
         val bitmap = ByteArray(clusterBytes * volumeLayout.bitmapClusterCount)
-        val usedClusterCount = 1 + volumeLayout.bitmapClusterCount + volumeLayout.upcaseClusterCount
-
+        //val usedClusterCount = 1 + volumeLayout.bitmapClusterCount + volumeLayout.upcaseClusterCount
+        val usedClusterCount = volumeLayout.rootDirFirstCluster + 1
         for (bitIndex in 0 until usedClusterCount) {
             val byteIndex = bitIndex / 8
             val bitOffset = bitIndex % 8
