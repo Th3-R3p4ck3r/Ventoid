@@ -106,7 +106,7 @@ class VentoyInstaller(
         bootCode.copyInto(mbr, 0, 0, VentoyConstants.MBR_BOOT_CODE_SIZE)
         writeMbrPartitionEntry(mbr, 446, active = 0x80, type = VentoyConstants.MBR_PART1_TYPE_EXFAT.toByte(),
             layout.part1StartSector, layout.part1SectorCount)
-        writeMbrPartitionEntry(mbr, 462, active = 0x00, type = VentoyConstants.MBR_PART2_TYPE_HIDDEN_FAT16.toByte(),
+        writeMbrPartitionEntry(mbr, 462, active = 0x00, type = VentoyConstants.MBR_PART2_TYPE_EFI.toByte(),
             layout.part2StartSector, layout.part2SectorCount)
         mbr[510] = VentoyConstants.MBR_SIGNATURE_55
         mbr[511] = VentoyConstants.MBR_SIGNATURE_AA
