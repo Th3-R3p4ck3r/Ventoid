@@ -27,6 +27,17 @@ object VentoyConstants {
     const val MBR_SIGNATURE_55 = 0x55.toByte()
     const val MBR_SIGNATURE_AA = 0xAA.toByte()
 
+    /** Ventoy Information Format (Windows vtoy driver reads this in sector 0 at offset 384) */
+    const val VENTOY_INFO_OFFSET = 384
+    const val VENTOY_INFO_SIGNATURE = "  www.ventoy.net"
+    const val VENTOY_INFO_SIGNATURE_SIZE = 16
+    const val VENTOY_INFO_CHECKSUM_OFFSET = 400
+    const val VENTOY_INFO_DISK_GUID_OFFSET = 401
+    const val VENTOY_INFO_DISK_GUID_SIZE = 16
+    const val VENTOY_INFO_DISK_SIZE_OFFSET = 417
+    const val VENTOY_INFO_PART_ID_OFFSET = 425
+    const val VENTOY_INFO_FS_TYPE_OFFSET = 427
+
     /** core.img: MBR style = 2047 sectors; GPT style = 2014 sectors (written from sector 34) */
     const val CORE_IMG_SECTORS_MBR = 2047
     const val CORE_IMG_SECTORS_GPT = 2014
