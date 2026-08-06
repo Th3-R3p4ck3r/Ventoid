@@ -333,6 +333,12 @@ class MainActivity : AppCompatActivity() {
             textUpdateStatus.setTextColor(ContextCompat.getColor(this, R.color.ventoid_text_secondary))
             return
         }
+        val usbManager = getSystemService(Context.USB_SERVICE) as UsbManager
+        if (!usbManager.hasPermission(item.usbDevice)) {
+            // Detection needs to open the block device, which requires USB permission.
+            requestUsbPermission(usbManager, item) { detectExistingVentoy() }
+            return
+        }
         buttonUpdate.isEnabled = false
         textUpdateStatus.text = getString(R.string.update_status_checking)
         textUpdateStatus.setTextColor(ContextCompat.getColor(this, R.color.ventoid_text_secondary))
