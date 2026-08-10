@@ -51,39 +51,20 @@ class VentoyInstaller(
     }
 
     /**
-     * Write the Ventoy Information Format block at offset 384 of sector 0.
-     * The Windows vtoy driver reads this to recognize a Ventoy disk and mount the
-     * ISO during Windows PE install. If this block is missing/corrupt, Windows shows
-     * "No drivers were found" during setup.
+     * Write the Ventoy Information signature block at offset 384 of sector 0.
+     * Official Ventoy layout:
+     *   384..399 (16 bytes): "  www.ventoy.net"
+     *   440..443 (4 bytes): MBR disk signature
      *
-     * Layout (absolute offsets in sector 0, little-endian):
-     *   384 (0x180): signature "  www.ventoy.net" (16 bytes)
-     *   400 (0x190): checksum (uint8) so that the 8-bit sum over sector 0 (384..511 excl 400) is 0x00
-     *   401 (0x191): disk GUID (16 bytes)
-     *   417 (0x1A1): disk size in bytes (uint64)
-     *   425 (0x1A9): partition ID holding the ISO (uint16, starts at 1)
-     *   427 (0x1AB): partition filesystem type (uint16: 0=exfat,1=ntfs,2=ext,3=xfs,4=udf,5=fat)
-     *   440 (0x1B8): MBR/Windows disk signature (4 bytes)
+     * Bytes 400..439 MUST NOT be modified, as they contain x86 bootloader code
+     * and error message strings ("VT", "Ge", "HD", "Rd", "Er") from boot.img.
      */
-    private fun writeDiskIdentity(sector0: ByteArray, identity: DiskIdentity, diskSizeBytes: Long, fsType: Int = 0) {
+    private fun writeDiskIdentity(sector0: ByteArray, identity: DiskIdentity) {
         require(sector0.size >= VentoyConstants.SECTOR_SIZE) { "sector0 must be 512 bytes" }
         VentoyConstants.VENTOY_INFO_SIGNATURE
             .toByteArray(StandardCharsets.US_ASCII)
             .copyInto(sector0, VentoyConstants.VENTOY_INFO_OFFSET)
-        identity.uuidBytes.copyInto(sector0, VentoyConstants.VENTOY_INFO_DISK_GUID_OFFSET)
-        writeLeLong(sector0, VentoyConstants.VENTOY_INFO_DISK_SIZE_OFFSET, diskSizeBytes)
-        writeLeShort(sector0, VentoyConstants.VENTOY_INFO_PART_ID_OFFSET, 1)    // partition 1 = ISO partition
-        writeLeShort(sector0, VentoyConstants.VENTOY_INFO_FS_TYPE_OFFSET, fsType)    // 0 = exFAT
         identity.signatureBytes.copyInto(sector0, 440)
-
-        var sum = 0
-        for (i in VentoyConstants.VENTOY_INFO_OFFSET until VentoyConstants.VENTOY_INFO_CHECKSUM_OFFSET) {
-            sum = (sum + (sector0[i].toInt() and 0xFF)) and 0xFF
-        }
-        for (i in VentoyConstants.VENTOY_INFO_CHECKSUM_OFFSET + 1 until VentoyConstants.SECTOR_SIZE) {
-            sum = (sum + (sector0[i].toInt() and 0xFF)) and 0xFF
-        }
-        sector0[VentoyConstants.VENTOY_INFO_CHECKSUM_OFFSET] = ((0x100 - sum) and 0xFF).toByte()
     }
 
     /**
@@ -237,20 +218,20 @@ class VentoyInstaller(
         }
         val start = startLba.toInt()
         val count = sectorCount.toInt()
-        var nHead = 255
+        val nHead = 255
         val nSector = 63
-        var nCyl = (512 * 1024) / nSector / nHead
-        while (nHead != 0 && (512L * 1024 / nSector / nHead) > 1024) {
-            nHead = (nHead * 2).coerceAtMost(255)
-        }
-        if (nHead == 0) nHead = 255
-        val cyl = start / nSector / nHead
-        val head = (start / nSector) % nHead
-        val sec = (start % nSector) + 1
+
+        val rawCyl = start / nSector / nHead
+        val cyl = rawCyl.coerceAtMost(1023)
+        val head = ((start / nSector) % nHead).coerceAtMost(254)
+        val sec = ((start % nSector) + 1).coerceAtMost(63)
+
         val endLba = start + count - 1
-        val endCyl = (endLba / nSector / nHead).toInt()
-        val endHead = ((endLba / nSector) % nHead).toInt()
-        val endSec = (endLba % nSector).toInt() + 1
+        val rawEndCyl = (endLba / nSector / nHead).toInt()
+        val endCyl = rawEndCyl.coerceAtMost(1023)
+        val endHead = (((endLba / nSector) % nHead).toInt()).coerceAtMost(254)
+        val endSec = (((endLba % nSector).toInt()) + 1).coerceAtMost(63)
+
         mbr[offset] = active.toByte()
         mbr[offset + 1] = head.toByte()
         mbr[offset + 2] = (sec or ((cyl shr 8) shl 6)).toByte()
@@ -289,7 +270,6 @@ class VentoyInstaller(
         try { Log.d(tag, "layout: part1Start=${layout.part1StartSector} part2Start=${layout.part2StartSector} part1Count=${layout.part1SectorCount}") } catch (_: Exception) { }
         val bootCode = bootImg.copyOf(VentoyConstants.MBR_BOOT_CODE_SIZE)
         val diskIdentity = generateDiskIdentity()
-        val diskSizeBytes = (totalBlocks + 1L) * VentoyConstants.SECTOR_SIZE
         if (useGpt) {
             VentoidFileLogger.log("install: writing GPT")
             try { Log.d(tag, "install: writing GPT") } catch (_: Exception) { }
@@ -316,7 +296,7 @@ class VentoyInstaller(
             }
 
             val sector0 = readSector(0)
-            writeDiskIdentity(sector0, diskIdentity, diskSizeBytes)
+            writeDiskIdentity(sector0, diskIdentity)
             writeSectors(0, sector0)
         } else {
             VentoidFileLogger.log("install: writing MBR")
@@ -328,7 +308,7 @@ class VentoyInstaller(
                 VentoidFileLogger.log("MBR verification FAILED: sector 0 read-back does not match (55 AA)")
                 throw IOException("MBR verification failed: write did not persist on device. Check USB connection.")
             }
-            writeDiskIdentity(readBack, diskIdentity, diskSizeBytes)
+            writeDiskIdentity(readBack, diskIdentity)
             writeSectors(0, readBack)
             VentoidFileLogger.log("MBR verification OK")
         }
