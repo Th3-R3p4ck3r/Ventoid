@@ -51,19 +51,53 @@ class VentoyInstaller(
     }
 
     /**
-     * Write the Ventoy Information signature block at offset 384 of sector 0.
-     * Official Ventoy layout:
-     *   384..399 (16 bytes): "  www.ventoy.net"
-     *   440..443 (4 bytes): MBR disk signature
+     * Write the full Ventoy Information block at offset 384 of sector 0.
      *
-     * Bytes 400..439 MUST NOT be modified, as they contain x86 bootloader code
-     * and error message strings ("VT", "Ge", "HD", "Rd", "Er") from boot.img.
+     * Official Ventoy layout (vtoy.sys reads this to identify the disk):
+     *   384..399 (16 bytes): "  www.ventoy.net"  (VENTOY_INFO_SIGNATURE)
+     *   400      (1 byte):   checksum byte = XOR of bytes 401..432
+     *   401..416 (16 bytes): disk GUID
+     *   417..424 (8 bytes):  disk size in sectors (LE)
+     *   425..426 (2 bytes):  Ventoy partition ID (part1 index, LE)
+     *   427      (1 byte):   filesystem type (0x01 = exFAT)
+     *   440..443 (4 bytes):  MBR disk signature
+     *
+     * Without a correct checksum + GUID the Windows vtoy.sys driver cannot
+     * identify the disk and reports "no drivers found" at boot.
      */
-    private fun writeDiskIdentity(sector0: ByteArray, identity: DiskIdentity) {
+    private fun writeDiskIdentity(
+        sector0: ByteArray,
+        identity: DiskIdentity,
+        diskSectors: Long = 0L,
+        part1Index: Int = 0,
+    ) {
         require(sector0.size >= VentoyConstants.SECTOR_SIZE) { "sector0 must be 512 bytes" }
+
+        // 1. Signature: "  www.ventoy.net" at offset 384
         VentoyConstants.VENTOY_INFO_SIGNATURE
             .toByteArray(StandardCharsets.US_ASCII)
             .copyInto(sector0, VentoyConstants.VENTOY_INFO_OFFSET)
+
+        // 2. Disk GUID at offset 401 (16 bytes)
+        identity.uuidBytes.copyInto(sector0, VentoyConstants.VENTOY_INFO_DISK_GUID_OFFSET)
+
+        // 3. Disk size in sectors at offset 417 (8 bytes LE)
+        writeLeLong(sector0, VentoyConstants.VENTOY_INFO_DISK_SIZE_OFFSET, diskSectors)
+
+        // 4. Partition ID at offset 425 (2 bytes LE, 0-indexed partition number of part1)
+        writeLeShort(sector0, VentoyConstants.VENTOY_INFO_PART_ID_OFFSET, part1Index)
+
+        // 5. Filesystem type at offset 427 (0x01 = exFAT, which Ventoy always uses for Part1)
+        sector0[VentoyConstants.VENTOY_INFO_FS_TYPE_OFFSET] = 0x01
+
+        // 6. Checksum at offset 400: XOR of bytes 401..432 (the info data region)
+        var checksum: Byte = 0
+        for (i in VentoyConstants.VENTOY_INFO_DISK_GUID_OFFSET until VentoyConstants.VENTOY_INFO_DISK_GUID_OFFSET + 32) {
+            checksum = (checksum.toInt() xor sector0[i].toInt()).toByte()
+        }
+        sector0[VentoyConstants.VENTOY_INFO_CHECKSUM_OFFSET] = checksum
+
+        // 7. MBR disk signature at offset 440 (4 bytes)
         identity.signatureBytes.copyInto(sector0, 440)
     }
 
@@ -296,8 +330,9 @@ class VentoyInstaller(
             }
 
             val sector0 = readSector(0)
-            writeDiskIdentity(sector0, diskIdentity)
+            writeDiskIdentity(sector0, diskIdentity, diskSectors = totalBlocks, part1Index = 0)
             writeSectors(0, sector0)
+            VentoidFileLogger.log("Ventoy Info block written (GPT): sig+guid+size+partID+fs+checksum")
         } else {
             VentoidFileLogger.log("install: writing MBR")
             try { Log.d(tag, "install: writing MBR") } catch (_: Exception) { }
@@ -308,8 +343,9 @@ class VentoyInstaller(
                 VentoidFileLogger.log("MBR verification FAILED: sector 0 read-back does not match (55 AA)")
                 throw IOException("MBR verification failed: write did not persist on device. Check USB connection.")
             }
-            writeDiskIdentity(readBack, diskIdentity)
+            writeDiskIdentity(readBack, diskIdentity, diskSectors = totalBlocks, part1Index = 0)
             writeSectors(0, readBack)
+            VentoidFileLogger.log("Ventoy Info block written (MBR): sig+guid+size+partID+fs+checksum")
             VentoidFileLogger.log("MBR verification OK")
         }
 
