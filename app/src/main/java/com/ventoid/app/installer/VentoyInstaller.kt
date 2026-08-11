@@ -51,60 +51,36 @@ class VentoyInstaller(
     }
 
     /**
-     * Write the full Ventoy Information block at offset 384 of sector 0.
+     * Write the Ventoy disk identity into sector 0.
      *
-     * Official Ventoy layout (vtoy.sys reads this to identify the disk):
-     *   384..399 (16 bytes): "  www.ventoy.net"  (VENTOY_INFO_SIGNATURE)
-     *   400      (1 byte):   checksum byte, so that the 8-bit sum over all
-     *                         512 bytes of the info block equals 0x00
-     *   401..416 (16 bytes): disk GUID
-     *   417..424 (8 bytes):  disk size in BYTES (LE)
-     *   425..426 (2 bytes):  Ventoy partition ID holding the ISO (1-based, LE)
-     *   427..428 (2 bytes):  filesystem type (UINT16: 0=exfat,1=ntfs,...)
-     *   440..443 (4 bytes):  MBR disk signature
+     * This matches exactly what the official VentoyWorker.sh installer writes:
+     *   boot.img carries a placeholder slot at offset 384 (16 x 0x58) and at
+     *   offset 440 (4 bytes). After writing the MBR, VentoyWorker.sh does:
      *
-     * Without a correct signature + checksum the Windows vtoy.sys driver cannot
-     * identify the disk and reports "no drivers found" at boot.
+     *     vtoy_gen_uuid | dd of=${DISK} seek=384 bs=1 count=16   # random disk GUID
+     *     vtoy_gen_uuid | dd of=${DISK} skip=12 seek=440 bs=1 count=4  # random disk signature
+     *
+     * GRUB reads these two values from the disk at boot and copies them into
+     * the runtime ventoy_os_param (vtoy_disk_guid / vtoy_disk_signature). The
+     * Windows vtoy.sys driver then locates the Ventoy disk by matching the
+     * struct fields against disk offset 0x180 (384) and 0x1b8 (440).
+     *
+     * IMPORTANT: offsets 400..428 in boot.img are real boot code (error strings
+     * and the INT 10h print routine). They must be left untouched. The fixed
+     * "  www.ventoy.net" GUID and the additive checksum are runtime struct
+     * fields built in memory by GRUB, never stored on disk.
      */
     private fun writeDiskIdentity(
         sector0: ByteArray,
         identity: DiskIdentity,
-        diskSizeBytes: Long = 0L,
-        part1Index: Int = 1,
     ) {
         require(sector0.size >= VentoyConstants.SECTOR_SIZE) { "sector0 must be 512 bytes" }
 
-        // 1. Signature: "  www.ventoy.net" at offset 384
-        VentoyConstants.VENTOY_INFO_SIGNATURE
-            .toByteArray(StandardCharsets.US_ASCII)
-            .copyInto(sector0, VentoyConstants.VENTOY_INFO_OFFSET)
+        // 1. Disk GUID at offset 384 (16 random bytes, LE)
+        identity.uuidBytes.copyInto(sector0, VentoyConstants.VENTOY_INFO_OFFSET)
 
-        // 2. Disk GUID at offset 401 (16 bytes)
-        identity.uuidBytes.copyInto(sector0, VentoyConstants.VENTOY_INFO_DISK_GUID_OFFSET)
-
-        // 3. Disk size in BYTES at offset 417 (8 bytes LE)
-        writeLeLong(sector0, VentoyConstants.VENTOY_INFO_DISK_SIZE_OFFSET, diskSizeBytes)
-
-        // 4. Partition ID at offset 425 (2 bytes LE, 1-based index of the partition holding the ISO)
-        writeLeShort(sector0, VentoyConstants.VENTOY_INFO_PART_ID_OFFSET, part1Index)
-
-        // 5. Filesystem type at offset 427 (UINT16 LE, 0 = exFAT)
-        writeLeShort(sector0, VentoyConstants.VENTOY_INFO_FS_TYPE_OFFSET, 0)
-
-        // 6. MBR disk signature at offset 440 (4 bytes)
-        identity.signatureBytes.copyInto(sector0, 440)
-
-        // 7. Checksum at offset 400 so the 8-bit sum over the whole info block is 0x00.
-        //    The block spans 384..511 in sector 0 (bytes 512..895 are zero until GRUB
-        //    fills the ISO path at boot time), so only sector 0 contributes now.
-        var sum = 0
-        for (i in VentoyConstants.VENTOY_INFO_OFFSET until VentoyConstants.VENTOY_INFO_CHECKSUM_OFFSET) {
-            sum = (sum + (sector0[i].toInt() and 0xFF)) and 0xFF
-        }
-        for (i in VentoyConstants.VENTOY_INFO_CHECKSUM_OFFSET + 1 until VentoyConstants.SECTOR_SIZE) {
-            sum = (sum + (sector0[i].toInt() and 0xFF)) and 0xFF
-        }
-        sector0[VentoyConstants.VENTOY_INFO_CHECKSUM_OFFSET] = ((0x100 - sum) and 0xFF).toByte()
+        // 2. MBR disk signature at offset 440 (4 random bytes)
+        identity.signatureBytes.copyInto(sector0, VentoyConstants.VENTOY_INFO_DISK_SIG_OFFSET)
     }
 
     /**
@@ -310,7 +286,6 @@ class VentoyInstaller(
         try { Log.d(tag, "layout: part1Start=${layout.part1StartSector} part2Start=${layout.part2StartSector} part1Count=${layout.part1SectorCount}") } catch (_: Exception) { }
         val bootCode = bootImg.copyOf(VentoyConstants.MBR_BOOT_CODE_SIZE)
         val diskIdentity = generateDiskIdentity()
-        val diskSizeBytes = (totalBlocks + 1L) * VentoyConstants.SECTOR_SIZE
         if (useGpt) {
             VentoidFileLogger.log("install: writing GPT")
             try { Log.d(tag, "install: writing GPT") } catch (_: Exception) { }
@@ -337,7 +312,7 @@ class VentoyInstaller(
             }
 
             val sector0 = readSector(0)
-            writeDiskIdentity(sector0, diskIdentity, diskSizeBytes = diskSizeBytes)
+            writeDiskIdentity(sector0, diskIdentity)
             writeSectors(0, sector0)
             VentoidFileLogger.log("Ventoy Info block written (GPT): sig+guid+size+partID+fs+checksum")
         } else {
@@ -350,7 +325,7 @@ class VentoyInstaller(
                 VentoidFileLogger.log("MBR verification FAILED: sector 0 read-back does not match (55 AA)")
                 throw IOException("MBR verification failed: write did not persist on device. Check USB connection.")
             }
-            writeDiskIdentity(readBack, diskIdentity, diskSizeBytes = diskSizeBytes)
+            writeDiskIdentity(readBack, diskIdentity)
             writeSectors(0, readBack)
             VentoidFileLogger.log("Ventoy Info block written (MBR): sig+guid+size+partID+fs+checksum")
             VentoidFileLogger.log("MBR verification OK")
@@ -575,17 +550,6 @@ class VentoyInstaller(
         target[offset + 1] = ((value ushr 8) and 0xFF).toByte()
         target[offset + 2] = ((value ushr 16) and 0xFF).toByte()
         target[offset + 3] = ((value ushr 24) and 0xFF).toByte()
-    }
-
-    private fun writeLeShort(target: ByteArray, offset: Int, value: Int) {
-        target[offset] = (value and 0xFF).toByte()
-        target[offset + 1] = ((value ushr 8) and 0xFF).toByte()
-    }
-
-    private fun writeLeLong(target: ByteArray, offset: Int, value: Long) {
-        for (i in 0 until 8) {
-            target[offset + i] = ((value ushr (i * 8)) and 0xFF).toByte()
-        }
     }
 
     private fun deterministicGuid(seed: String): UUID {

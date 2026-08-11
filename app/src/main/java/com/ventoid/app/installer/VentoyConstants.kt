@@ -20,16 +20,13 @@ object VentoyConstants {
     const val GPT_ATTR_NO_DRIVE_LETTER: Long = Long.MIN_VALUE // 0x8000000000000000L (Bit 63)
     const val GPT_VTOYEFI_ATTRIBUTES: Long = GPT_ATTR_NO_DRIVE_LETTER or GPT_ATTR_HIDDEN or GPT_ATTR_SYSTEM_PARTITION
 
-    /** Ventoy Information Format (Windows vtoy driver reads this in sector 0 at offset 384) */
+    /** Ventoy disk identity written by the installer (matches VentoyWorker.sh).
+     *  boot.img reserves a 16-byte slot at 384 and a 4-byte slot at 440.
+     *  GRUB reads these into the runtime ventoy_os_param; vtoy.sys matches
+     *  them against disk offset 0x180 (384) and 0x1b8 (440). */
     const val VENTOY_INFO_OFFSET = 384
-    const val VENTOY_INFO_SIGNATURE = "  www.ventoy.net"
-    const val VENTOY_INFO_SIGNATURE_SIZE = 16
-    const val VENTOY_INFO_CHECKSUM_OFFSET = 400
-    const val VENTOY_INFO_DISK_GUID_OFFSET = 401
     const val VENTOY_INFO_DISK_GUID_SIZE = 16
-    const val VENTOY_INFO_DISK_SIZE_OFFSET = 417
-    const val VENTOY_INFO_PART_ID_OFFSET = 425
-    const val VENTOY_INFO_FS_TYPE_OFFSET = 427
+    const val VENTOY_INFO_DISK_SIG_OFFSET = 440
 
     const val MBR_BOOT_CODE_SIZE = 446
     const val MBR_PARTITION_ENTRY_SIZE = 16
