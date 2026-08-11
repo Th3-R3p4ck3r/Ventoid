@@ -80,3 +80,4 @@ Ventoid is an Android app for creating Ventoy-style USB drives directly from a p
 - Verify bundled Secure Boot markers in the EFI image before install
 - Format the data partition as exFAT
 - Show stage-based progress and a local write log
+
