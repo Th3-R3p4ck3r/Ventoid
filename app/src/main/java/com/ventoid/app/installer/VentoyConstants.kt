@@ -14,6 +14,20 @@ object VentoyConstants {
     const val MBR_PART2_TYPE_EFI: Int = 0xEF
     const val GPT_PROTECTIVE_MBR_TYPE: Int = 0xEE
 
+    /** GPT Partition Attributes for VTOYEFI: Bit 63 (No Drive Letter), Bit 62 (Hidden), Bit 0 (System Partition) */
+    const val GPT_ATTR_SYSTEM_PARTITION: Long = 0x0000000000000001L
+    const val GPT_ATTR_HIDDEN: Long = 0x4000000000000000L
+    const val GPT_ATTR_NO_DRIVE_LETTER: Long = Long.MIN_VALUE // 0x8000000000000000L (Bit 63)
+    const val GPT_VTOYEFI_ATTRIBUTES: Long = GPT_ATTR_NO_DRIVE_LETTER or GPT_ATTR_HIDDEN or GPT_ATTR_SYSTEM_PARTITION
+
+    /** Ventoy disk identity written by the installer (matches VentoyWorker.sh).
+     *  boot.img reserves a 16-byte slot at 384 and a 4-byte slot at 440.
+     *  GRUB reads these into the runtime ventoy_os_param; vtoy.sys matches
+     *  them against disk offset 0x180 (384) and 0x1b8 (440). */
+    const val VENTOY_INFO_OFFSET = 384
+    const val VENTOY_INFO_DISK_GUID_SIZE = 16
+    const val VENTOY_INFO_DISK_SIG_OFFSET = 440
+
     const val MBR_BOOT_CODE_SIZE = 446
     const val MBR_PARTITION_ENTRY_SIZE = 16
     const val MBR_PARTITION_ENTRIES = 4

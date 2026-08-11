@@ -5,10 +5,18 @@
         <item name="colorPrimaryDark">@color/ventoid_primary_dark</item>
         <item name="colorAccent">@color/ventoid_accent</item>
         <item name="android:windowBackground">@color/ventoid_window</item>
+        <item name="alertDialogTheme">@style/Theme.Ventoid.AlertDialog</item>
     </style>
 
     <style name="Theme.Ventoid.Dialog" parent="Theme.AppCompat.Dialog">
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowNoTitle">true</item>
+    </style>
+
+    <style name="Theme.Ventoid.AlertDialog" parent="Theme.AppCompat.Dialog.Alert">
+        <item name="android:windowBackground">@drawable/panel_surface</item>
+        <item name="android:textColorPrimary">@color/ventoid_text_primary</item>
+        <item name="android:textColorSecondary">@color/ventoid_text_secondary</item>
+        <item name="colorAccent">@color/ventoid_primary</item>
     </style>
 </resources>

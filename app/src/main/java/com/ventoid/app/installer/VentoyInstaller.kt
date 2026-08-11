@@ -43,17 +43,44 @@ class VentoyInstaller(
     )
 
     private fun generateDiskIdentity(): DiskIdentity {
-        val uuidBytes = ByteArray(16)
+        val uuidBytes = ByteArray(VentoyConstants.VENTOY_INFO_DISK_GUID_SIZE)
         val signatureBytes = ByteArray(4)
         secureRandom.nextBytes(uuidBytes)
         secureRandom.nextBytes(signatureBytes)
         return DiskIdentity(uuidBytes = uuidBytes, signatureBytes = signatureBytes)
     }
 
-    private fun writeDiskIdentity(sector0: ByteArray, identity: DiskIdentity) {
+    /**
+     * Write the Ventoy disk identity into sector 0.
+     *
+     * This matches exactly what the official VentoyWorker.sh installer writes:
+     *   boot.img carries a placeholder slot at offset 384 (16 x 0x58) and at
+     *   offset 440 (4 bytes). After writing the MBR, VentoyWorker.sh does:
+     *
+     *     vtoy_gen_uuid | dd of=${DISK} seek=384 bs=1 count=16   # random disk GUID
+     *     vtoy_gen_uuid | dd of=${DISK} skip=12 seek=440 bs=1 count=4  # random disk signature
+     *
+     * GRUB reads these two values from the disk at boot and copies them into
+     * the runtime ventoy_os_param (vtoy_disk_guid / vtoy_disk_signature). The
+     * Windows vtoy.sys driver then locates the Ventoy disk by matching the
+     * struct fields against disk offset 0x180 (384) and 0x1b8 (440).
+     *
+     * IMPORTANT: offsets 400..428 in boot.img are real boot code (error strings
+     * and the INT 10h print routine). They must be left untouched. The fixed
+     * "  www.ventoy.net" GUID and the additive checksum are runtime struct
+     * fields built in memory by GRUB, never stored on disk.
+     */
+    private fun writeDiskIdentity(
+        sector0: ByteArray,
+        identity: DiskIdentity,
+    ) {
         require(sector0.size >= VentoyConstants.SECTOR_SIZE) { "sector0 must be 512 bytes" }
-        identity.uuidBytes.copyInto(sector0, 384)
-        identity.signatureBytes.copyInto(sector0, 440)
+
+        // 1. Disk GUID at offset 384 (16 random bytes, LE)
+        identity.uuidBytes.copyInto(sector0, VentoyConstants.VENTOY_INFO_OFFSET)
+
+        // 2. MBR disk signature at offset 440 (4 random bytes)
+        identity.signatureBytes.copyInto(sector0, VentoyConstants.VENTOY_INFO_DISK_SIG_OFFSET)
     }
 
     /**
@@ -162,6 +189,7 @@ class VentoyInstaller(
             firstLba = layout.part2StartSector,
             lastLba = layout.part2EndSector,
             name = "VTOYEFI",
+            attributes = VentoyConstants.GPT_VTOYEFI_ATTRIBUTES,
         )
 
         val entriesCrc32 = crc32(entries)
@@ -206,20 +234,20 @@ class VentoyInstaller(
         }
         val start = startLba.toInt()
         val count = sectorCount.toInt()
-        var nHead = 255
+        val nHead = 255
         val nSector = 63
-        var nCyl = (512 * 1024) / nSector / nHead
-        while (nHead != 0 && (512L * 1024 / nSector / nHead) > 1024) {
-            nHead = (nHead * 2).coerceAtMost(255)
-        }
-        if (nHead == 0) nHead = 255
-        val cyl = start / nSector / nHead
-        val head = (start / nSector) % nHead
-        val sec = (start % nSector) + 1
+
+        val rawCyl = start / nSector / nHead
+        val cyl = rawCyl.coerceAtMost(1023)
+        val head = ((start / nSector) % nHead).coerceAtMost(254)
+        val sec = ((start % nSector) + 1).coerceAtMost(63)
+
         val endLba = start + count - 1
-        val endCyl = (endLba / nSector / nHead).toInt()
-        val endHead = ((endLba / nSector) % nHead).toInt()
-        val endSec = (endLba % nSector).toInt() + 1
+        val rawEndCyl = (endLba / nSector / nHead).toInt()
+        val endCyl = rawEndCyl.coerceAtMost(1023)
+        val endHead = (((endLba / nSector) % nHead).toInt()).coerceAtMost(254)
+        val endSec = (((endLba % nSector).toInt()) + 1).coerceAtMost(63)
+
         mbr[offset] = active.toByte()
         mbr[offset + 1] = head.toByte()
         mbr[offset + 2] = (sec or ((cyl shr 8) shl 6)).toByte()
@@ -286,6 +314,7 @@ class VentoyInstaller(
             val sector0 = readSector(0)
             writeDiskIdentity(sector0, diskIdentity)
             writeSectors(0, sector0)
+            VentoidFileLogger.log("Ventoy Info block written (GPT): sig+guid+size+partID+fs+checksum")
         } else {
             VentoidFileLogger.log("install: writing MBR")
             try { Log.d(tag, "install: writing MBR") } catch (_: Exception) { }
@@ -298,6 +327,7 @@ class VentoyInstaller(
             }
             writeDiskIdentity(readBack, diskIdentity)
             writeSectors(0, readBack)
+            VentoidFileLogger.log("Ventoy Info block written (MBR): sig+guid+size+partID+fs+checksum")
             VentoidFileLogger.log("MBR verification OK")
         }
 
@@ -486,6 +516,7 @@ class VentoyInstaller(
         firstLba: Long,
         lastLba: Long,
         name: String,
+        attributes: Long = 0L,
     ) {
         val offset = entryIndex * 128
         val le = ByteBuffer.wrap(entries).order(ByteOrder.LITTLE_ENDIAN)
@@ -493,7 +524,7 @@ class VentoyInstaller(
         putGuidLe(le, offset + 16, uniqueGuid)
         le.putLong(offset + 32, firstLba)
         le.putLong(offset + 40, lastLba)
-        le.putLong(offset + 48, 0L)
+        le.putLong(offset + 48, attributes)
         val nameBytes = name.toByteArray(StandardCharsets.UTF_16LE)
         nameBytes.copyInto(entries, offset + 56, 0, minOf(nameBytes.size, 72))
     }

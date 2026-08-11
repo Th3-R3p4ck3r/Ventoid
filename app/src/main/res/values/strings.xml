@@ -67,4 +67,24 @@
     <string name="about_dev_link_keyword">Th3-R3p4ck3r</string>
     <string name="about_github_label">Check for updates:</string>
     <string name="about_github_btn">https://github.com/Th3-R3p4ck3r/Ventoid</string>
+
+    <!-- Format USB Tab Strings -->
+    <string name="tab_ventoy">Ventoy</string>
+    <string name="tab_format">Format USB</string>
+    <string name="format_title">Format</string>
+    <string name="label_file_system">File System:</string>
+    <string name="label_cluster_size">Cluster Size:</string>
+    <string name="label_partition_table">Partition Table:</string>
+    <string name="hint_volume_label">Volume Label</string>
+    <string name="btn_format">FORMAT</string>
+    <string name="no_device_connected">No Device Connected.</string>
+    <string name="format_confirm_title">Format USB Drive?</string>
+    <string name="format_confirm_body">Are you sure you want to format %1$s?\n\nFile System: %2$s\nPartition Table: %3$s\n\nALL DATA ON THE DEVICE WILL BE PERMANENTLY ERASED.</string>
+    <string name="format_confirm_details_fmt">File System: %1$s\nPartition Table: %2$s</string>
+    <string name="format_confirm_btn">Format Now</string>
+    <string name="cancel">Cancel</string>
+    <string name="format_started">Starting USB format (%1$s, %2$s)...</string>
+    <string name="format_success">USB drive formatted successfully!</string>
+    <string name="format_failed">Format failed: %1$s</string>
 </resources>
+

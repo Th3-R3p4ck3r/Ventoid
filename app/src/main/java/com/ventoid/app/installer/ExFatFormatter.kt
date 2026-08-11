@@ -49,19 +49,27 @@ object ExFatFormatter {
     fun computeVolumeLayout(volumeLengthSectors: Long, sectorsPerCluster: Int): VolumeLayout {
         require(volumeLengthSectors >= 256) { "Part1 too small for exFAT" }
 
+        // Pass 1: estimate FAT size from full volume (ignores FAT overhead)
         var fatLengthSectors = 1
         var clusterHeapOffset = FAT_OFFSET.toLong() + fatLengthSectors * NUM_FATS
         var clusterCount = (volumeLengthSectors - clusterHeapOffset) / sectorsPerCluster
-        if (clusterCount < 2) {
-            clusterCount = 2
-        }
+        if (clusterCount < 2) clusterCount = 2
 
-        val fatLenLong = (clusterCount + 2) * 4 + SECTOR_SIZE - 1
-        fatLengthSectors = (fatLenLong / SECTOR_SIZE).toInt()
+        val fatLenLong1 = (clusterCount + 2) * 4 + SECTOR_SIZE - 1
+        fatLengthSectors = (fatLenLong1 / SECTOR_SIZE).toInt()
         clusterHeapOffset = FAT_OFFSET.toLong() + fatLengthSectors * NUM_FATS
         clusterCount = (volumeLengthSectors - clusterHeapOffset) / sectorsPerCluster
-        if (clusterCount < 2) {
-            clusterCount = 2
+        if (clusterCount < 2) clusterCount = 2
+
+        // Pass 2: refine FAT size with the corrected cluster count (handles edge cases where
+        // the first-pass FAT size is 1 sector too large, stealing an unnecessary data cluster).
+        val fatLenLong2 = (clusterCount + 2) * 4 + SECTOR_SIZE - 1
+        val fatLengthSectors2 = (fatLenLong2 / SECTOR_SIZE).toInt()
+        if (fatLengthSectors2 != fatLengthSectors) {
+            fatLengthSectors = fatLengthSectors2
+            clusterHeapOffset = FAT_OFFSET.toLong() + fatLengthSectors * NUM_FATS
+            clusterCount = (volumeLengthSectors - clusterHeapOffset) / sectorsPerCluster
+            if (clusterCount < 2) clusterCount = 2
         }
 
         val clusterSizeBytes = sectorsPerCluster.toLong() * SECTOR_SIZE
@@ -250,8 +258,8 @@ object ExFatFormatter {
     fun buildAllocationBitmap(sectorsPerCluster: Int, volumeLayout: VolumeLayout): ByteArray {
         val clusterBytes = sectorsPerCluster * SECTOR_SIZE
         val bitmap = ByteArray(clusterBytes * volumeLayout.bitmapClusterCount)
-        val usedClusterCount = 1 + volumeLayout.bitmapClusterCount + volumeLayout.upcaseClusterCount
-
+        //val usedClusterCount = 1 + volumeLayout.bitmapClusterCount + volumeLayout.upcaseClusterCount
+        val usedClusterCount = volumeLayout.rootDirFirstCluster + 1
         for (bitIndex in 0 until usedClusterCount) {
             val byteIndex = bitIndex / 8
             val bitOffset = bitIndex % 8
