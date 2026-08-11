@@ -1,6 +1,6 @@
 # Ventoid
-
-<img src="app/src/main/res/drawable-nodpi/ventoid_icon.png" alt="Ventoid logo" width="128">
+<div align="center">
+<img src="app/src/main/res/drawable-nodpi/ventoid_icon.png" alt="Ventoid logo" width="128"/>
 
 Ventoid turns an Android phone into a practical Ventoy-style USB writer. Plug in a drive over OTG, pick the target device, and prepare bootable media without needing to go back to a PC for the write step.
 
