@@ -1,6 +1,5 @@
-<div align="center">
 # Ventoid
-
+<div align="center">
 <img src="app/src/main/res/drawable-nodpi/ventoid_icon.png" alt="Ventoid logo" width="128"/>
 
 <div align="left">
