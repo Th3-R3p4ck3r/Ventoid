@@ -15,6 +15,9 @@
 build/
 app/build
 
+# Kotlin daemon / compiler session files
+.kotlin/
+
 # Ignore system files
 #.DS_Store
 #Thumbs.db
