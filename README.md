@@ -1,8 +1,12 @@
-# Ventoid
 <div align="center">
+# Ventoid
+
 <img src="app/src/main/res/drawable-nodpi/ventoid_icon.png" alt="Ventoid logo" width="128"/>
 
-Ventoid turns an Android phone into a practical Ventoy-style USB writer. Plug in a drive over OTG, pick the target device, and prepare bootable media without needing to go back to a PC for the write step.
+<div align="left">
+Ventoid turns an Android phone into a practical Ventoy-style USB writer. 
+Plug in a drive over OTG, pick the target device, 
+and prepare bootable media without needing to go back to a PC for the write step.
 
 - OTG-first workflow for rescue kits and field installs
 - Direct USB mass-storage writing from Android
